@@ -12,6 +12,7 @@
 - Ghosts ( various)
 - Walls
 - Environment
+- ANIMATION!!
 
 ### External data
 - Accelrometer (Earthquake)
