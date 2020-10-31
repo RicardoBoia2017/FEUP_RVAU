@@ -21,7 +21,7 @@ public class GameManager : MonoBehaviour
     {
         if(!invokerCalled)
         {
-            hero =  GameObject.Find("Hero");
+            hero =  GameObject.Find("Hero"); 
             InvokeRepeating("SpawnEnemy", 3f, 1f);
         }
     }
