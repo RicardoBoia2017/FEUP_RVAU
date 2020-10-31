@@ -8,14 +8,8 @@ public class GameManager : MonoBehaviour
     public GameObject[] enemies;
     private int numberEnemies = 0;
     private int maxEnemies = 15;
-    private Text text;
     private GameObject hero;
     private bool invokerCalled = false;
-
-    void Start()
-    {
-        text = GameObject.Find("Distance").GetComponent<Text>();
-    }
 
     public void InvokeSpawnEnemy()
     {
@@ -63,7 +57,6 @@ public class GameManager : MonoBehaviour
     public void GameOver(string name)
     {
         numberEnemies = maxEnemies;
-        text.text = "Collided with " + name;
         GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
         foreach (GameObject enemy in enemies)
             Destroy(enemy);

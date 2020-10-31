@@ -5,17 +5,10 @@ using UnityEngine.UI;
 
 public class HeroBehaviour : MonoBehaviour
 {
-    private Text text;
     public GameManager manager;
     public GameObject projectile;
 
     private bool invokerCalled = false;
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        text = GameObject.Find("Distance").GetComponent<Text>();
-    }
 
     void OnCollisionEnter(Collision c)
     {
