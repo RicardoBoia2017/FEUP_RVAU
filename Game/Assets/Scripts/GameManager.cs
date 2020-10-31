@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
-    public GameObject enemyPrefab;
+    public GameObject[] enemies;
     private int numberEnemies = 0;
     private int maxEnemies = 15;
     private Text text;
@@ -32,8 +32,10 @@ public class GameManager : MonoBehaviour
         if(numberEnemies > maxEnemies)
             return;
 
+        GameObject enemyPrefab;
         Transform enemyTransform;
 
+        enemyPrefab = enemies[Random.Range(0,enemies.Length)];
         enemyTransform = enemyPrefab.transform;
 
 /*        Vector3 origin = hero.transform.position; 

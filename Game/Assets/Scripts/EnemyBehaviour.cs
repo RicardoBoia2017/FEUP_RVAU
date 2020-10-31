@@ -6,6 +6,7 @@ public class EnemyBehaviour : MonoBehaviour
 {
     private GameObject hero;
     private float speed = 0.5f;
+    public int health;
     // Start is called before the first frame update
     void Start()
     {
@@ -22,8 +23,9 @@ public class EnemyBehaviour : MonoBehaviour
     {
         if(c.collider.gameObject.transform.tag == "Bullet")
         {
-            Debug.Log("DESTROYED");
-            Destroy(gameObject);
+            health--;
+            if(health <= 0)
+                Destroy(gameObject);
             Destroy(c.collider.gameObject);
         }
     }

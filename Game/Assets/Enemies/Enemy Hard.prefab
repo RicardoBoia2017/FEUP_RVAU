@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 3450008347355333443}
   - component: {fileID: 3450008347355333440}
   - component: {fileID: -7912794643530907897}
-  - component: {fileID: -1889715637193158286}
+  - component: {fileID: 4637297584711105468}
   m_Layer: 0
   m_Name: Enemy Hard
   m_TagString: Enemy
@@ -110,7 +110,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   health: 3
---- !u!54 &-1889715637193158286
+--- !u!54 &4637297584711105468
 Rigidbody:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -124,5 +124,5 @@ Rigidbody:
   m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 116
   m_CollisionDetection: 0
