@@ -2,15 +2,22 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
     public GameObject[] enemies;
     private int numberEnemies = 0;
     private int maxEnemies = 15;
+    private int enemiesDown = 0;
     private GameObject hero;
     private bool invokerCalled = false;
+    public GameObject levelWonUI;
 
+    void Start()
+    {
+        enemiesDown = 0;
+    }
     public void InvokeSpawnEnemy()
     {
         if(!invokerCalled)
@@ -30,6 +37,8 @@ public class GameManager : MonoBehaviour
         Transform enemyTransform;
 
         enemyPrefab = enemies[Random.Range(0,enemies.Length)];
+                enemyPrefab = enemies[0];
+
         enemyTransform = enemyPrefab.transform;
 
 /*        Vector3 origin = hero.transform.position; 
@@ -54,11 +63,25 @@ public class GameManager : MonoBehaviour
         Instantiate(enemyPrefab, enemyPos, playerRotation);
     }
 
+    public void EnemyDown()
+    {
+        enemiesDown++;
+        if(enemiesDown >= maxEnemies)
+            WinLevel();
+    }
+
+    void WinLevel()
+    {
+        levelWonUI.SetActive(true);
+    }
+
     public void GameOver(string name)
     {
         numberEnemies = maxEnemies;
         GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
         foreach (GameObject enemy in enemies)
             Destroy(enemy);
+        //SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+
     }
 }
