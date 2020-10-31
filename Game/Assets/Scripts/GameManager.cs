@@ -38,7 +38,6 @@ public class GameManager : MonoBehaviour
         Transform enemyTransform;
 
         enemyPrefab = enemies[Random.Range(0,enemies.Length)];
-                enemyPrefab = enemies[2];
 
         enemyTransform = enemyPrefab.transform;
 
