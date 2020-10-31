@@ -13,6 +13,7 @@ public class GameManager : MonoBehaviour
     private GameObject hero;
     private bool invokerCalled = false;
     public GameObject levelWonUI;
+    public GameObject GameOverUI;
 
     void Start()
     {
@@ -37,7 +38,7 @@ public class GameManager : MonoBehaviour
         Transform enemyTransform;
 
         enemyPrefab = enemies[Random.Range(0,enemies.Length)];
-                enemyPrefab = enemies[0];
+                enemyPrefab = enemies[2];
 
         enemyTransform = enemyPrefab.transform;
 
@@ -72,16 +73,22 @@ public class GameManager : MonoBehaviour
 
     void WinLevel()
     {
+        enemiesDown = 0;
+        numberEnemies = 0;
+        invokerCalled = false;
         levelWonUI.SetActive(true);
     }
-
     public void GameOver(string name)
     {
         numberEnemies = maxEnemies;
         GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
         foreach (GameObject enemy in enemies)
             Destroy(enemy);
-        //SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+        GameOverUI.SetActive(true);
+    }
 
+    public void GoToMenu()
+    {
+        SceneManager.LoadScene(0);
     }
 }
