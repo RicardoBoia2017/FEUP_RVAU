@@ -55,7 +55,7 @@ public class GameManager : MonoBehaviour
         
         Vector3 playerPos = hero.transform.position;
         Vector3 playerDirection = hero.transform.forward;
-        Quaternion playerRotation = hero.transform.rotation;
+        Quaternion playerRotation = enemyPrefab.transform.rotation;
         float spawnDistance = 1;
 
         Vector3 enemyPos = playerPos + playerDirection*spawnDistance;
