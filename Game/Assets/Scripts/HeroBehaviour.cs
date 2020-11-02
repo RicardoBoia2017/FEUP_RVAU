@@ -9,7 +9,7 @@ public class HeroBehaviour : MonoBehaviour
     public GameObject projectile;
 
     private bool invokerCalled = false;
-    public Animator anim;
+    private Animator anim;
 
     void Start()
     {
@@ -36,8 +36,7 @@ public class HeroBehaviour : MonoBehaviour
     void FireBullet()
     {
         anim.Play("SHOOTING", 0,0);
-        GameObject bullet = Instantiate(projectile, transform.position, Quaternion.identity) as GameObject;
-        bullet.transform.Rotate(90f, 0f, 0f, Space.Self);
-        bullet.GetComponent<Rigidbody>().AddForce(transform.forward * 30);
+        Vector3 position = transform.position + new Vector3(0,0.07f,0);
+        GameObject bullet = Instantiate(projectile, position, transform.rotation) as GameObject;
     }
 }

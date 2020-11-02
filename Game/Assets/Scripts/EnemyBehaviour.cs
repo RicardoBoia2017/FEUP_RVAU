@@ -18,7 +18,7 @@ public class EnemyBehaviour : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        transform.position = Vector3.MoveTowards(transform.position, hero.transform.position, speed * Time.deltaTime);
+        transform.position = Vector3.MoveTowards(transform.position, hero.transform.position + new Vector3(0,0.07f,0), speed * Time.deltaTime);
     }
 
     void OnCollisionEnter(Collision c)

@@ -5,7 +5,7 @@ using UnityEngine;
 public class BulletBehaviour : MonoBehaviour
 {
     private GameObject hero;
-    // Start is called before the first frame update
+    private float speed = 1f;
     void Start()
     {
         hero =  GameObject.Find("Hero"); 
@@ -16,5 +16,7 @@ public class BulletBehaviour : MonoBehaviour
     {
         if (Vector3.Distance(hero.transform.position, transform.position) > 1)
             Destroy(gameObject);
+        else
+            transform.position += transform.forward * Time.deltaTime * speed;
     }
 }
