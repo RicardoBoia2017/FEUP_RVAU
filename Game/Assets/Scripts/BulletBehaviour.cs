@@ -19,4 +19,11 @@ public class BulletBehaviour : MonoBehaviour
         else
             transform.position += transform.forward * Time.deltaTime * speed;
     }
+
+    void OnCollisionEnter(Collision c)
+    {
+        Debug.Log("Colission with" + c.collider);
+        if(c.collider.gameObject.transform.tag == "Wall")
+            Destroy(gameObject);
+    }
 }

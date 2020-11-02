@@ -8,7 +8,7 @@ public class GameManager : MonoBehaviour
 {
     public GameObject[] enemies;
     private int numberEnemies = 0;
-    private int maxEnemies = 300;
+    private int maxEnemies = 100;
     private int enemiesDown = 0;
     private GameObject hero;
     private bool invokerCalled = false;
@@ -25,6 +25,7 @@ public class GameManager : MonoBehaviour
         {
             hero =  GameObject.Find("Hero"); 
             InvokeRepeating("SpawnEnemy", 3f, 1f);
+            invokerCalled = true;
         }
     }
 
