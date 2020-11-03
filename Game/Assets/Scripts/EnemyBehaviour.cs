@@ -38,14 +38,5 @@ public class EnemyBehaviour : MonoBehaviour
             }
             Destroy(c.collider.gameObject);
         }
-
-        if(c.collider.gameObject.transform.tag == "Wall")
-            againstWall = true;
-    }
-
-    void OnCollisionExit(Collision c)
-    {
-        if(c.collider.gameObject.transform.tag == "Wall")
-            againstWall = false;
     }
 }

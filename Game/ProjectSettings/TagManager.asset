@@ -7,7 +7,7 @@ TagManager:
   - MovementTarget
   - Enemy
   - Bullet
-  - Wall
+  - Mine
   layers:
   - Default
   - TransparentFX
