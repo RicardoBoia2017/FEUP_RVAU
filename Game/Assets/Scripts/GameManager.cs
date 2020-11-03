@@ -78,12 +78,20 @@ public class GameManager : MonoBehaviour
         invokerCalled = false;
         levelWonUI.SetActive(true);
     }
-    public void GameOver(string name)
+    public void GameOver(GameObject collider)
     {
         numberEnemies = maxEnemies;
+        collider.GetComponent<EnemyBehaviour>().isCollider = true;
+
         GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
         foreach (GameObject enemy in enemies)
-            Destroy(enemy);
+            if(enemy != collider)
+                Destroy(enemy);
+        Invoke("setUIActive", 1f);
+    }
+
+    private void setUIActive()
+    {
         GameOverUI.SetActive(true);
     }
 

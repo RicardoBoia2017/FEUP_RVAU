@@ -8,8 +8,9 @@ public class EnemyBehaviour : MonoBehaviour
     private GameManager manager;
     private float speed = 0.3f;
     public int health;
-    // Start is called before the first frame update
-    public bool againstWall = false;
+    private bool againstWall = false;
+    public bool isCollider = false;
+
     void Start()
     {
         hero =  GameObject.Find("Hero");
@@ -19,9 +20,9 @@ public class EnemyBehaviour : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(!againstWall)
+        if(!againstWall && !isCollider)
             transform.position = Vector3.MoveTowards(transform.position, hero.transform.position + new Vector3(0,0.07f,0), speed * Time.deltaTime);
-        else    
+        else if (!isCollider) 
             transform.position += Vector3.right * speed/2 * Time.deltaTime;
     }
 

@@ -6,12 +6,12 @@ public class BulletBehaviour : MonoBehaviour
 {
     private GameObject hero;
     private float speed = 1f;
+    
     void Start()
     {
         hero =  GameObject.Find("Hero"); 
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (Vector3.Distance(hero.transform.position, transform.position) > 1)
@@ -22,7 +22,6 @@ public class BulletBehaviour : MonoBehaviour
 
     void OnCollisionEnter(Collision c)
     {
-        Debug.Log("Colission with" + c.collider);
         if(c.collider.gameObject.transform.tag == "Wall")
             Destroy(gameObject);
     }
