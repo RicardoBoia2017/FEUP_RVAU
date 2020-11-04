@@ -24,7 +24,7 @@ public class EnemyBehaviour : MonoBehaviour
     void Update()
     {
         if(!isCollider)
-            transform.position = Vector3.MoveTowards(transform.position, heroT.position + new Vector3(0,0.07f,0), speed * Time.deltaTime);
+            transform.position += -transform.up * Time.deltaTime * speed;
     }
 
     void OnCollisionEnter(Collision c)

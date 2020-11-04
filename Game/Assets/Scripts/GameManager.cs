@@ -37,7 +37,7 @@ public class GameManager : MonoBehaviour
         if(!invokerCalled)
         {
             hero =  GameObject.Find("Hero"); 
-            InvokeRepeating("SpawnEnemy", 3f, 0.1f);
+            InvokeRepeating("SpawnEnemy", 3f, 1f);
             invokerCalled = true;
         }
     }
@@ -53,8 +53,7 @@ public class GameManager : MonoBehaviour
 
         int index = Random.Range(0,10);
         enemyPrefab = enemies[odds[index]];
-        Debug.Log(odds[index]);
-        return;
+
         Quaternion randAng = Quaternion.Euler(0, Random.Range(-20,20), 0);
         randAng = hero.transform.rotation * randAng; // this might be backwards
         Vector3 spawnPos = hero.transform.position + randAng * Vector3.forward;
