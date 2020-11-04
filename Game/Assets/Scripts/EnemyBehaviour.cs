@@ -10,20 +10,21 @@ public class EnemyBehaviour : MonoBehaviour
     public int health;
     private bool againstWall = false;
     public bool isCollider = false;
-
+    Transform heroT;
     void Start()
     {
         hero =  GameObject.Find("Hero");
         manager = GameObject.Find("Manager").GetComponent<GameManager>(); 
+        transform.LookAt(hero.transform);
+        transform.Rotate(-90f,0,0);
+        heroT = hero.transform;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if(!againstWall && !isCollider)
-            transform.position = Vector3.MoveTowards(transform.position, hero.transform.position + new Vector3(0,0.07f,0), speed * Time.deltaTime);
-        else if (!isCollider) 
-            transform.position += Vector3.right * speed/2 * Time.deltaTime;
+        if(!isCollider)
+            transform.position = Vector3.MoveTowards(transform.position, heroT.position + new Vector3(0,0.07f,0), speed * Time.deltaTime);
     }
 
     void OnCollisionEnter(Collision c)
