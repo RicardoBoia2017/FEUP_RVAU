@@ -22,7 +22,6 @@ public class HeroBehaviour : MonoBehaviour
         {
             dead = true;
             anim.Play("DEAD",0,0);
-            Destroy(c.collider.gameObject);
             manager.GameOver(c.collider.gameObject);
         }
     }
