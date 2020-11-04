@@ -22,6 +22,7 @@ public class HeroBehaviour : MonoBehaviour
         {
             dead = true;
             anim.Play("DEAD",0,0);
+            Destroy(c.collider.gameObject);
             manager.GameOver(c.collider.gameObject);
         }
     }
@@ -30,7 +31,7 @@ public class HeroBehaviour : MonoBehaviour
     {
         if(!invokerCalled)
         {
-            InvokeRepeating("FireBullet", 1f, 0.5f);
+            InvokeRepeating("FireBullet", 1f, 0.3f);
             invokerCalled = true;
         }
     }
