@@ -11,6 +11,7 @@ public class GameManager : MonoBehaviour
     private int maxEnemies = 30;
     private int enemiesDown = 0;
     private GameObject hero;
+    private Transform initialPosition;
     private bool invokerCalled = false;
     public GameObject levelWonUI;
     public GameObject GameOverUI;
@@ -44,7 +45,11 @@ public class GameManager : MonoBehaviour
 
     void SpawnEnemy()
     {
+        if(numberEnemies == 0)
+            initialPosition = hero.transform;
+            
         numberEnemies++;
+            
         if(numberEnemies > maxEnemies)
             return;
 
@@ -54,8 +59,8 @@ public class GameManager : MonoBehaviour
         enemyPrefab = enemies[odds[index]];
 
         Quaternion randAng = Quaternion.Euler(0, Random.Range(-20,20), 0);
-        randAng = hero.transform.rotation * randAng; // this might be backwards
-        Vector3 spawnPos = hero.transform.position + randAng * Vector3.forward;
+        randAng = initialPosition.rotation * randAng; 
+        Vector3 spawnPos = initialPosition.position + randAng * Vector3.forward;
 
         Instantiate(enemyPrefab, spawnPos + new Vector3(0,0.07f,0), enemyPrefab.transform.rotation);
     }
@@ -84,6 +89,7 @@ public class GameManager : MonoBehaviour
         foreach (GameObject enemy in enemies)
             if(enemy != collider)
                 Destroy(enemy);
+
         Invoke("setUIActive", 1f);
     }
 
