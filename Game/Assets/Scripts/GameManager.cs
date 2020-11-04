@@ -8,7 +8,7 @@ public class GameManager : MonoBehaviour
 {
     public GameObject[] enemies;
     private int numberEnemies = 0;
-    private int maxEnemies = 100;
+    private int maxEnemies = 30;
     private int enemiesDown = 0;
     private GameObject hero;
     private bool invokerCalled = false;
@@ -49,7 +49,6 @@ public class GameManager : MonoBehaviour
             return;
 
         GameObject enemyPrefab;
-        Transform enemyTransform;
 
         int index = Random.Range(0,10);
         enemyPrefab = enemies[odds[index]];
@@ -58,29 +57,7 @@ public class GameManager : MonoBehaviour
         randAng = hero.transform.rotation * randAng; // this might be backwards
         Vector3 spawnPos = hero.transform.position + randAng * Vector3.forward;
 
-        Instantiate(enemyPrefab, spawnPos - new Vector3(0,0,0.3f), enemyPrefab.transform.rotation);
-/*        
-
-        enemyTransform = enemyPrefab.transform;
-
-        Vector3 origin = hero.transform.position; 
-        float radius = 1f;
-
-        Vector2 randomPos = Random.insideUnitCircle.normalized * radius;
-        enemyTransform.position = origin + new Vector3(randomPos.x, 0, randomPos.y);
-
-        Instantiate(enemyPrefab, enemyTransform);*/
-
-/*      Make cubes spawn in front of hero*/
-        
-        /*Vector3 playerPos = hero.transform.position + new Vector3(0,0.07f,0);
-        Vector3 playerDirection = hero.transform.forward;
-        Quaternion playerRotation = enemyPrefab.transform.rotation;
-        float spawnDistance = 1;
-
-        Vector3 enemyPos = playerPos + playerDirection*spawnDistance;
-
-        Instantiate(enemyPrefab, enemyPos, playerRotation);*/
+        Instantiate(enemyPrefab, spawnPos + new Vector3(0,0.07f,0), enemyPrefab.transform.rotation);
     }
 
     public void EnemyDown()

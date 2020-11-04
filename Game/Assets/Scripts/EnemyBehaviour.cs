@@ -8,7 +8,6 @@ public class EnemyBehaviour : MonoBehaviour
     private GameManager manager;
     private float speed = 0.3f;
     public int health;
-    private bool againstWall = false;
     public bool isCollider = false;
     Transform heroT;
     void Start()
