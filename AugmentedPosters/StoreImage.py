@@ -1,18 +1,29 @@
 import sys
 import os
 import cv2
+import numpy as np
 
 movieName = sys.argv[1]
 classification = sys.argv[2]
 imagePath = sys.argv[3]
 
-rootdir = "images_db"
+dir = "images_db/" + movieName
 
+if os.path.isdir(dir) is True:
+    print("Directory already exists")
+    sys.exit()
+
+#Create directory
+os.mkdir(dir)
+
+#Create Image
 image = cv2.imread(imagePath)
-fullName = rootdir + '/' + movieName + '_' + classification + '.' + imagePath.split('.')[1] 
-cv2.imshow('Feature points', image)
-cv2.waitKey(0)
+cv2.imwrite(dir + '/' + movieName + '_' + classification + '.' + imagePath.split('.')[1] , image)
 
-if os.path.isfile(fullName) is False:
-    print("entrou")
-    cv2.imwrite(fullName, image)
+#Create features files
+orb = cv2.ORB_create(nfeatures = 1000)
+kp, des = orb.detectAndCompute(image,None)
+np.savetxt(dir + "/descriptors.txt", des, fmt="%s")
+
+cv2.imshow('Image', image)
+cv2.waitKey(0)
