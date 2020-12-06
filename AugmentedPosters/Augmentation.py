@@ -1,45 +1,48 @@
 import cv2
+import os
 import numpy as np
 import urllib.request 
 import time
+import sys
 
 URL = "http://192.168.1.2:8080/shot.jpg"
+rootdir = "images_db"
+targets = []
 
-def stackImages(imgArray,scale,lables=[]):
-    sizeW= imgArray[0][0].shape[1]
-    sizeH = imgArray[0][0].shape[0]
-    rows = len(imgArray)
-    cols = len(imgArray[0])
-    rowsAvailable = isinstance(imgArray[0], list)
-    if rowsAvailable:
-        for x in range ( 0, rows):
-            for y in range(0, cols):
-                imgArray[x][y] = cv2.resize(imgArray[x][y], (sizeW,sizeH), None, scale, scale)
-                if len(imgArray[x][y].shape) == 2: imgArray[x][y]= cv2.cvtColor( imgArray[x][y], cv2.COLOR_GRAY2BGR)
-        imageBlank = np.zeros((sizeH, sizeW, 3), np.uint8)
-        hor = [imageBlank]*rows
-        hor_con = [imageBlank]*rows
-        for x in range(0, rows):
-            hor[x] = np.hstack(imgArray[x])
-            hor_con[x] = np.concatenate(imgArray[x])
-        ver = np.vstack(hor)
-        ver_con = np.concatenate(hor)
-    else:
-        for x in range(0, rows):
-            imgArray[x] = cv2.resize(imgArray[x], (sizeW, sizeH), None, scale, scale)
-            if len(imgArray[x].shape) == 2: imgArray[x] = cv2.cvtColor(imgArray[x], cv2.COLOR_GRAY2BGR)
-        hor= np.hstack(imgArray)
-        hor_con= np.concatenate(imgArray)
-        ver = hor
-    if len(lables) != 0:
-        eachImgWidth= int(ver.shape[1] / cols)
-        eachImgHeight = int(ver.shape[0] / rows)
-        print(eachImgHeight)
-        for d in range(0, rows):
-            for c in range (0,cols):
-                cv2.rectangle(ver,(c*eachImgWidth,eachImgHeight*d),(c*eachImgWidth+len(lables[d])*13+27,30+eachImgHeight*d),(255,255,255),cv2.FILLED)
-                cv2.putText(ver,lables[d],(eachImgWidth*c+10,eachImgHeight*d+20),cv2.FONT_HERSHEY_COMPLEX,0.7,(255,0,255),2)
-    return ver
+class Target:
+    def __init__(self, imagePath, score, descriptors):
+        self.imagePath = imagePath
+        self.score = score
+        self.descriptors = descriptors
+    def __repr__(self):
+        return('Path: ' + self.imagePath + 
+               '   Score: ' + self.score)
+
+
+#Get posters from database
+
+for root, dirs, files in os.walk(rootdir):
+    for subdir in dirs:
+        for root2, dirs2, files2 in os.walk(rootdir + "/" + subdir):
+            descriptors = []
+            for name in files2:
+                if name == "descriptors.txt":
+                    with open(rootdir + '/' + subdir + '/' + name) as descriptors_file:
+                        lines = descriptors_file.readlines()
+                        for line in lines:
+                            descriptors.append(np.fromstring(line, dtype=int, sep=' '))
+                    descriptors = np.array(descriptors)        
+                else:
+                    imagePath = rootdir + '/' + subdir + '/' + name
+                    score = name.split('_')[1][0:1]        
+
+        targets.append(Target(imagePath, score, descriptors))
+
+
+for i in targets : 
+    print(i)
+
+sys.exit()
 
 capture = cv2.VideoCapture(0) # Webcam
 imgTarget = cv2.imread('drone.jpeg') # Image target

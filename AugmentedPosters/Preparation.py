@@ -9,6 +9,7 @@ imagePath = sys.argv[3]
 
 dir = "images_db/" + movieName
 
+#Check if poster already exists in databases
 if os.path.isdir(dir) is True:
     print("Directory already exists")
     sys.exit()
@@ -25,5 +26,6 @@ orb = cv2.ORB_create(nfeatures = 1000)
 kp, des = orb.detectAndCompute(image,None)
 np.savetxt(dir + "/descriptors.txt", des, fmt="%s")
 
+#Show image
 cv2.imshow('Image', image)
 cv2.waitKey(0)
