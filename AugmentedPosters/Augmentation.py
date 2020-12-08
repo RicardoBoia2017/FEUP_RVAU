@@ -18,44 +18,26 @@ class Target:
         return('Path: ' + self.imagePath + 
                '   Score: ' + self.score)
 
-
 #Get posters from database
-
-for root, dirs, files in os.walk(rootdir):
-    for subdir in dirs:
-        for root2, dirs2, files2 in os.walk(rootdir + "/" + subdir):
-            descriptors = []
-            for name in files2:
-                if name == "descriptors.txt":
-                    with open(rootdir + '/' + subdir + '/' + name) as descriptors_file:
-                        lines = descriptors_file.readlines()
-                        for line in lines:
-                            descriptors.append(np.fromstring(line, dtype=int, sep=' '))
-                    descriptors = np.array(descriptors)        
-                else:
-                    imagePath = rootdir + '/' + subdir + '/' + name
-                    score = name.split('_')[1][0:1]        
-
-        targets.append(Target(imagePath, score, descriptors))
-
-
-for i in targets : 
-    print(i)
-
-sys.exit()
-
-capture = cv2.VideoCapture(0) # Webcam
-imgTarget = cv2.imread('drone.jpeg') # Image target
-
-heigth, width, channel = imgTarget.shape # Image dimensions
+def RetrieveImages():
+    for root, dirs, files in os.walk(rootdir):
+        for subdir in dirs:
+            for root2, dirs2, files2 in os.walk(rootdir + "/" + subdir):
+                descriptors = []
+                for name in files2:
+                    if name == "descriptors.npy":
+                        descriptors = np.load(rootdir + '/' + subdir + '/' + name)  
+                    else:
+                        imagePath = rootdir + '/' + subdir + '/' + name
+                        score = name.split('_')[1][0:1]        
+            targets.append(Target(imagePath, score, descriptors))
 
 #Getting key points and descriptor of target
 
+RetrieveImages()
+capture = cv2.VideoCapture(0) # Webcam
 orb = cv2.ORB_create(nfeatures = 1000)
-kp1, des1 = orb.detectAndCompute(imgTarget, None)
-# imgTarget = cv2.drawKeypoints(imgTarget,kp1,None)
-
-print("Number of matching points")
+bf = cv2.BFMatcher()
 
 while True:
     
@@ -67,21 +49,28 @@ while True:
     #imgNp = np.array(bytearray(imgResp.read()),dtype=np.uint8)
     #imgWebcam = cv2.imdecode(imgNp,-1)
 
-    #imgAug = imgWebcam.copy()
+    #Detect image from webcam
     kp2, des2 = orb.detectAndCompute(imgWebcam, None)
-    #imgWebcam = cv2.drawKeypoints(imgWebcam,kp2,None)
 
-    bf = cv2.BFMatcher()
-    matches = bf.knnMatch(des1,des2,k=2)
-    good = []
+    #Compare webcam image with posters
+    for target in targets:
+        matches = bf.knnMatch(target.descriptors,des2,k=2)
+        good = []
 
-    #Gets matching points
-    for m,n in matches:
-        if m.distance < 0.75 * n.distance:
-            good.append(m)
+        #Gets matching points
+        for m,n in matches:
+            if m.distance < 0.75 * n.distance:
+                good.append(m)
 
-    print(len(good))
+        #Number of good matches
+        print(len(good))
 
+    #cv2.imshow('Webcam', imgWebcam)
+    #cv2.waitKey(0)
+    sys.exit()
+
+
+    
     # Draws lines between image target and captured image
     imgFeatures = cv2.drawMatches(imgTarget, kp1, imgWebcam, kp2, good, None, flags=2)
 
