@@ -9,8 +9,9 @@ rootdir = "images_db"
 targets = []
 
 class Poster:
-    def __init__(self, imagePath, score, descriptors):
+    def __init__(self, imagePath, movieName, score, descriptors):
         self.imagePath = imagePath
+        self.movieName = movieName
         self.score = score
         self.descriptors = descriptors
     def __repr__(self):
@@ -36,11 +37,49 @@ def RetrieveImages():
                     else:
                         imagePath = rootdir + '/' + subdir + '/' + name
                         score = name.split('_')[1][0:1]        
-            targets.append(Poster(imagePath, score, descriptors))
+            targets.append(Poster(imagePath, subdir, score, descriptors))
 
 #Getting key points and descriptor of target
 
 RetrieveImages()
+#drone = cv2.imread("drone.jpeg")#
+#rows,cols,channels = drone.shape
+#blank = np.zeros((rows,cols,3), np.uint8)
+#
+#cv2.putText(blank, "example", (0,50), cv2.FONT_HERSHEY_SIMPLEX , 0.6, (0,255,0), 1, cv2.LINE_AA)
+#
+#roi = drone[0:rows, 0:cols ]
+#
+#img2gray = cv2.cvtColor(blank,cv2.COLOR_BGR2GRAY)
+#ret, mask = cv2.threshold(img2gray, 10, 255, cv2.THRESH_BINARY)
+#mask_inv = cv2.bitwise_not(mask)
+#
+#img1_bg = cv2.bitwise_and(roi,roi,mask = mask_inv)
+#
+#img2_fg = cv2.bitwise_and(blank,blank,mask = mask)
+#
+#dst = cv2.add(img1_bg,img2_fg)
+#drone[0:rows, 0:cols ] = dst
+
+
+
+#rgba = cv2.cvtColor(blankImage, cv2.COLOR_RGB2RGBA)
+#angle = 30
+#rgba[:, :, 3] = 0
+#blankImage[:, :, 2] = 255
+#cv2.putText(rgba, "example", (100,100), cv2.FONT_HERSHEY_SIMPLEX , 1, (255,255,255), 1, cv2.LINE_AA)
+#M = cv2.getRotationMatrix2D((100,100), angle, 1)
+#out = cv2.warpAffine(rgba, M, (rgba.shape[1], rgba.shape[0]))
+#cv2.imshow("Transparent", rgba)
+##res = cv2.bitwise_and(blankImage,blankImage, mask= rgba)
+#cv2.imshow("OG",blankImage)
+#cv2.imshow("Res",out)
+
+#cv2.imshow("Transparent",rgba)
+#cv2.imwrite("transparent.png" , rgba)
+
+#cv2.waitKey(0)
+#sys.exit()
 
 capture = cv2.VideoCapture(0) # Webcam
 orb = cv2.ORB_create(nfeatures = 1000)
@@ -72,6 +111,8 @@ while True:
             if m.distance < 0.75 * n.distance:
                 good.append(m)
 
+        print(len(good))
+
         if len(good) > 20:
             if(bestMatch is None):
                 bestMatch = Match(target, good)
@@ -101,12 +142,31 @@ while True:
         imageBounds = cv2.polylines(imgWebcam, [np.int32(dest)], True, (255,0,255),3)
         cv2.imshow('ImageBounds',imageBounds)
 
-        mask = np.zeros((imgWebcam.shape[0], imgWebcam.shape[1]), np.uint8)
-        cv2.fillPoly(mask, [np.int32(dest)], (255,255,255))
-        maskInv = cv2.bitwise_not(mask)
-        imgAug = cv2.bitwise_and(imgAug, imgAug, mask = maskInv)
+        #mask = np.zeros((imgWebcam.shape[0], imgWebcam.shape[1]), np.uint8)
+        #cv2.fillPoly(mask, [np.int32(dest)], (255,255,255))
+        #maskInv = cv2.bitwise_not(mask)
+        #imgAug = cv2.bitwise_and(imgAug, imgAug, mask = maskInv)
 
-        cv2.putText(imgWebcam, bestMatch.poster.imagePath, (50,50), cv2.FONT_HERSHEY_SIMPLEX , 1, (255,255,255), 2, cv2.LINE_AA)
+        webcamHeight,webcamWidth,WebcamChannels = imgWebcam.shape
+        blank = np.zeros((webcamHeight,webcamWidth,3), np.uint8)
+
+        (textWidth, textHeight), baseline = cv2.getTextSize(bestMatch.poster.movieName, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 1)
+        org = (0, 0 + textHeight)
+        cv2.putText(blank, bestMatch.poster.movieName, (org), cv2.FONT_HERSHEY_SIMPLEX , 0.8, (0,255,0), 1, cv2.LINE_AA)
+        blank = cv2.warpPerspective(blank, matrix, (webcamWidth, webcamHeight))
+
+        roi = imgWebcam[0:webcamHeight, 0:webcamWidth]
+
+        img2gray = cv2.cvtColor(blank,cv2.COLOR_BGR2GRAY)
+        ret, mask = cv2.threshold(img2gray, 10, 255, cv2.THRESH_BINARY)
+        mask_inv = cv2.bitwise_not(mask)
+
+        img1_bg = cv2.bitwise_and(roi,roi,mask = mask_inv)
+
+        img2_fg = cv2.bitwise_and(blank,blank,mask = mask)
+
+        dst = cv2.add(img1_bg,img2_fg)
+        imgWebcam[0:webcamHeight, 0:webcamWidth ] = dst
 
         cv2.imshow('maskNew', imgAug)
 
@@ -116,6 +176,6 @@ while True:
 
     # 0 - One frame at a time 
     # 1 - Continuous
-    cv2.waitKey(1)
+    cv2.waitKey(0)
 
 
