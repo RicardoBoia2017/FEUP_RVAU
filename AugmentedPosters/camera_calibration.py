@@ -9,11 +9,13 @@ CALIBRATION_PATH = "calibration/"
 CALIBRATION_FILE = "calibration/camera_calibration.json"
 
 
+
 def load():
     with open(CALIBRATION_FILE) as f:
         data = json.load(f)
-        camera_matrix =  np.array(data["camera_matrix"])
-        dist_coeff =  np.array(data["dist_coeff"])
+        mtx  =  np.array(data["camera_matrix"])
+        dist =  np.array(data["dist_coeff"])
+        return mtx, dist
 
 
 def save(mtx, dist):
@@ -26,8 +28,7 @@ def save(mtx, dist):
 
 def calibrate():
     if os.path.isfile(CALIBRATION_FILE) is True:
-        load()
-        print("CALIBRATION: Config file loaded")
+        print("CALIBRATION: Calibration file already exists")
     else:
         print("CALIBRATION: Calibrate camera ...")
         ret, mtx, dist = calibrateCamera()

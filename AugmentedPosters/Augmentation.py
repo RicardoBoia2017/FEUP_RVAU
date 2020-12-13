@@ -3,6 +3,7 @@ import os
 import numpy as np
 import time
 import sys
+import camera_calibration as cam
 
 rootdir = "images_db"
 targets = []
@@ -27,6 +28,8 @@ class Match:
         self.matches = matches
     def __repr__(self):
         return('Poster: ' + self.poster.imagePath)
+    def empty(self):
+        return len(self.matches) == 0
 
 
 
@@ -71,6 +74,8 @@ def writeTitle(imageWebcam,imgWebcam, bestMatch, matrix):
 
 
 def main():
+    mtx, dist = cam.load() #Load camera calibration file
+
     RetrieveImages()
     capture = cv2.VideoCapture(0) # Webcam
     sift = cv2.SIFT.create()
@@ -80,11 +85,11 @@ def main():
         
         #Computer Webcam
         _,imgWebcam = capture.read()
-        imgAug = imgWebcam.copy()
+        imgWebcam = cam.undistort(imgWebcam, mtx, dist)
 
         #Detect image from webcam
         kpWebcam, desWebcam = sift.detectAndCompute(imgWebcam, None)
-        bestMatch = None
+        bestMatch = Match(None, [])
 
         #Compare webcam image with posters
         for target in targets:
@@ -96,18 +101,12 @@ def main():
                 if m.distance < 0.75 * n.distance:
                     good.append(m)
 
-            print(len(good))
-
-            if len(good) > 20:
-                if(bestMatch is None):
-                    bestMatch = Match(target, good)
-                elif len(good) > len(bestMatch.matches):
+            if (len(good) > 20) and (len(good) > len(bestMatch.matches)):
                     bestMatch = Match(target, good)
                     
-        cv2.imshow('Webcam', imgWebcam)
         
         # If images have more than 20 matching points
-        if bestMatch is not None:
+        if not bestMatch.empty():
 
             targetImage = cv2.imread(bestMatch.poster.imagePath)
             kpTarget, desTarget = sift.detectAndCompute(targetImage, None)
@@ -116,32 +115,33 @@ def main():
             imageFeatures = cv2.drawMatches(targetImage, kpTarget, imgWebcam, kpWebcam, bestMatch.matches, None, flags=2)
             cv2.imshow('Images', imageFeatures) 
 
+
+
             targetSrcPoints = np.float32([kpTarget[m.queryIdx].pt for m in bestMatch.matches]).reshape(-1,1,2)
             webcamSrcPoints = np.float32([kpWebcam[m.trainIdx].pt for m in bestMatch.matches]).reshape(-1,1,2)
-
-            matrix, max = cv2.findHomography(targetSrcPoints, webcamSrcPoints, cv2.RANSAC, 5)
-            targetHeigth, targetWidth, targetChannel = targetImage.shape
+            
+            matrix, _ = cv2.findHomography(targetSrcPoints, webcamSrcPoints, cv2.RANSAC, 5)
+            targetHeigth, targetWidth, _ = targetImage.shape
 
             pts = np.float32([[0,0], [0,targetHeigth - 1], [targetWidth - 1, targetHeigth - 1], [targetWidth - 1, 0]]).reshape(-1,1,2)
             dest = cv2.perspectiveTransform(pts, matrix)
             imageBounds = cv2.polylines(imgWebcam, [np.int32(dest)], True, (255,0,255),3)
             cv2.imshow('ImageBounds',imageBounds)
 
+            
+            ret,rvecs, tvecs = cv2.solvePnP(targetSrcPoints, webcamSrcPoints,mtx, dist)
+            
+            
+            
             title = writeTitle(imgWebcam, imgWebcam,bestMatch, matrix)
-
             imgWebcam = title
 
-            cv2.imshow('maskNew', imgAug)
 
-        #cv2.imshow('Features',imgFeatures)
-        #cv2.imshow('Image',imgTarget)
         cv2.imshow('Webcam', imgWebcam)
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-        # 0 - One frame at a time 
-        # 1 - Continuous
-        #cv2.waitKey(1)
+
 
     capture.release()
     cv2.destroyAllWindows()
