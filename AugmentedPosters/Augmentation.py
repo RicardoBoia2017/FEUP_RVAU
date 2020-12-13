@@ -18,6 +18,7 @@ class Poster:
         self.score = score
         self.kp = kp
         self.descriptors = descriptors
+        self.image = cv2.imread(imagePath)
     def __repr__(self):
         return('Path: ' + self.imagePath + 
                '   Score: ' + self.score)
@@ -86,6 +87,29 @@ def draw(img, corners, imgpts):
     img = cv2.line(img, corner, tuple(imgpts[2].ravel()), (0,0,255), 5)
     return img
 
+
+def getBestMatch(desWebcam):
+
+    bf = cv2.BFMatcher(crossCheck= False)
+    bestMatch = Match(None, [])
+
+    #Compare webcam image with posters
+    for target in targets:
+        matches = bf.knnMatch(target.descriptors,desWebcam,k=2)
+        good = []
+
+        #Gets matching points
+        for m,n in matches:
+            if m.distance < 0.75 * n.distance:
+                good.append(m)
+
+        if (len(good) > 20) and (len(good) > len(bestMatch.matches)):
+                bestMatch = Match(target, good)
+
+    return bestMatch
+                
+
+
 def main():
     mtx, dist = cam.load() #Load camera calibration file
 
@@ -93,7 +117,6 @@ def main():
 
     capture = cv2.VideoCapture(0) # Webcam
     sift = cv2.SIFT.create()
-    bf = cv2.BFMatcher(crossCheck= False)
 
     while True:
         
@@ -103,26 +126,12 @@ def main():
 
         #Detect image from webcam
         kpWebcam, desWebcam = sift.detectAndCompute(imgWebcam, None)
-        bestMatch = Match(None, [])
-
-        #Compare webcam image with posters
-        for target in targets:
-            matches = bf.knnMatch(target.descriptors,desWebcam,k=2)
-            good = []
-
-            #Gets matching points
-            for m,n in matches:
-                if m.distance < 0.75 * n.distance:
-                    good.append(m)
-
-            if (len(good) > 20) and (len(good) > len(bestMatch.matches)):
-                    bestMatch = Match(target, good)
-                    
+        bestMatch = getBestMatch(desWebcam)
         
         # If images have more than 20 matching points
         if not bestMatch.empty():
 
-            targetImage = cv2.imread(bestMatch.poster.imagePath)
+            targetImage = bestMatch.poster.image
             kpTarget = bestMatch.poster.kp
             
             # Draws lines between image target and captured image
@@ -130,35 +139,35 @@ def main():
             cv2.imshow('Images', imageFeatures) 
 
 
-
+            # Draw image bounds
             targetSrcPoints = np.float32([kpTarget[m.queryIdx].pt for m in bestMatch.matches]).reshape(-1,1,2)
             webcamSrcPoints = np.float32([kpWebcam[m.trainIdx].pt for m in bestMatch.matches]).reshape(-1,1,2)
-            
             matrix, _ = cv2.findHomography(targetSrcPoints, webcamSrcPoints, cv2.RANSAC, 5)
-            targetHeigth, targetWidth, _ = targetImage.shape
 
-            pts = np.float32([[0,0], [0,targetHeigth - 1], [targetWidth - 1, targetHeigth - 1], [targetWidth - 1, 0]]).reshape(-1,1,2)
-            dest = cv2.perspectiveTransform(pts, matrix)
-            imageBounds = cv2.polylines(imgWebcam, [np.int32(dest)], True, (255,0,255),3)
-            cv2.imshow('ImageBounds',imageBounds)
+            
+            if matrix is not None:
+                targetHeigth, targetWidth, _ = targetImage.shape
+                pts = np.float32([[0,0], [0,targetHeigth - 1], [targetWidth - 1, targetHeigth - 1], [targetWidth - 1, 0]]).reshape(-1,1,2)
+                dest = cv2.perspectiveTransform(pts, matrix)
+                imageBounds = cv2.polylines(imgWebcam, [np.int32(dest)], True, (255,0,255),3)
+                cv2.imshow('ImageBounds',imageBounds)
 
-            #Draw cube
-            criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-            objp = np.zeros((2*2,3), np.float32)
-            objp[:,:2] = np.mgrid[0:2,0:2].T.reshape(-1,2)
-            axis = np.float32([[1,0,0], [0,1,0], [0,0,-1]]).reshape(-1,3)
+                #Draw cube np.int32(
+                # criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+                # objp = np.zeros((2*2,3), np.float32)
+                # objp[:,:2] = np.mgrid[0:2,0:2].T.reshape(-1,2)
+                # axis = np.float32([[1,0,0], [0,1,0], [0,0,-1]]).reshape(-1,3)
 
-            ret,rvecs, tvecs, _ = cv2.solvePnPRansac(objp, dest,mtx, dist)
-            if ret == True:
-                print(ret)
-                # project 3D points to image plane
-                imgpts, jac = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
-                img = imgWebcam.copy()
-                img = draw(img,dest,imgpts)
-                cv2.imshow('img',img)
+                # ret,rvecs, tvecs, _ = cv2.solvePnPRansac(objp, dest,mtx, dist)
+                # if ret == True:
+                #     # project 3D points to image plane
+                #     imgpts, jac = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
+                #     img = imgWebcam.copy()
+                #     img = draw(img,dest,imgpts)
+                #     cv2.imshow('img',img)
 
-            title = writeTitle(imgWebcam, imgWebcam,bestMatch, matrix)
-            imgWebcam = title
+                title = writeTitle(imgWebcam, imgWebcam,bestMatch, matrix)
+                imgWebcam = title
 
 
         cv2.imshow('Webcam', imgWebcam)

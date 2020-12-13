@@ -17,7 +17,6 @@ def save_2_jason(classification, kps, des, path):
     cnt = 0
     data['classification'] = classification
     data['descriptors'] = np.asarray(des).tolist()
-    data
     for i in kps:
         data['KeyPoint_%d'%cnt] = []  
         data['KeyPoint_%d'%cnt].append({'x': i.pt[0]})
@@ -46,7 +45,7 @@ def read_from_jason(path):
 def createPoster(movieName, classification, imagePath):
     dir = DATABASE_DIR + movieName
 
-        #Check if poster already exists in databases
+    #Check if poster already exists in databases
     if os.path.isdir(dir) is True:
         print("DATABASE: Directory already exists")
         sys.exit()
