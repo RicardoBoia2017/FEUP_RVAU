@@ -4,7 +4,6 @@ import numpy as np
 import time
 import sys
 
-URL = "http://192.168.1.2:8080/shot.jpg"
 rootdir = "images_db"
 targets = []
 
@@ -27,9 +26,9 @@ class Match:
 
 #Get posters from database
 def RetrieveImages():
-    for root, dirs, files in os.walk(rootdir):
+    for _, dirs, _ in os.walk(rootdir):
         for subdir in dirs:
-            for root2, dirs2, files2 in os.walk(rootdir + "/" + subdir):
+            for _, _, files2 in os.walk(rootdir + "/" + subdir):
                 descriptors = []
                 for name in files2:
                     if name == "descriptors.npy":
@@ -62,7 +61,7 @@ def writeTitle(imageWebcam, webcamHeight, webcamWidth):
 RetrieveImages()
 capture = cv2.VideoCapture(0) # Webcam
 orb = cv2.ORB_create(nfeatures = 1000)
-#sift = cv2.xfeatures2d_SIFT.create()
+sift = cv2.xfeatures2d_SIFT.create()
 bf = cv2.BFMatcher()
 
 while True:
@@ -71,13 +70,8 @@ while True:
     success,imgWebcam = capture.read()
     imgAug = imgWebcam.copy()
 
-    #Phone
-    #imgResp = urllib.request.urlopen(URL)
-    #imgNp = np.array(bytearray(imgResp.read()),dtype=np.uint8)
-    #imgWebcam = cv2.imdecode(imgNp,-1)
-
     #Detect image from webcam
-    kpWebcam, desWebcam = orb.detectAndCompute(imgWebcam, None)
+    kpWebcam, desWebcam = sift.detectAndCompute(imgWebcam, None)
     bestMatch = None
 
     #Compare webcam image with posters
@@ -104,7 +98,7 @@ while True:
     if bestMatch is not None:
 
         targetImage = cv2.imread(bestMatch.poster.imagePath)
-        kpTarget, desTarget = orb.detectAndCompute(targetImage, None)
+        kpTarget, desTarget = sift.detectAndCompute(targetImage, None)
         
         # Draws lines between image target and captured image
         imageFeatures = cv2.drawMatches(targetImage, kpTarget, imgWebcam, kpWebcam, bestMatch.matches, None, flags=2)
@@ -120,11 +114,6 @@ while True:
         dest = cv2.perspectiveTransform(pts, matrix)
         imageBounds = cv2.polylines(imgWebcam, [np.int32(dest)], True, (255,0,255),3)
         cv2.imshow('ImageBounds',imageBounds)
-
-        #mask = np.zeros((imgWebcam.shape[0], imgWebcam.shape[1]), np.uint8)
-        #cv2.fillPoly(mask, [np.int32(dest)], (255,255,255))
-        #maskInv = cv2.bitwise_not(mask)
-        #imgAug = cv2.bitwise_and(imgAug, imgAug, mask = maskInv)
 
         webcamHeight,webcamWidth,WebcamChannels = imgWebcam.shape
         title = writeTitle(imgWebcam, webcamHeight, webcamWidth)
