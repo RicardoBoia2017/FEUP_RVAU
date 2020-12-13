@@ -4,6 +4,7 @@ import numpy as np
 import time
 import sys
 import camera_calibration as cam
+import Preparation as prep
 
 rootdir = "images_db"
 targets = []
@@ -11,10 +12,11 @@ targets = []
 
 
 class Poster:
-    def __init__(self, imagePath, movieName, score, descriptors):
+    def __init__(self, imagePath, movieName, score, kp, descriptors):
         self.imagePath = imagePath
         self.movieName = movieName
         self.score = score
+        self.kp = kp
         self.descriptors = descriptors
     def __repr__(self):
         return('Path: ' + self.imagePath + 
@@ -39,13 +41,16 @@ def RetrieveImages():
         for subdir in dirs:
             for _, _, files2 in os.walk(rootdir + "/" + subdir):
                 descriptors = []
+                kp = []
+                score = 0
                 for name in files2:
-                    if name == "descriptors.npy":
-                        descriptors = np.load(rootdir + '/' + subdir + '/' + name)
+                    if name == "data.json":
+                        score, kp, descriptors = prep.read_from_jason(prep.getDataPath(subdir))
+                        print(score)
                     else:
                         imagePath = rootdir + '/' + subdir + '/' + name
-                        score = name.split('_')[1][0:1]        
-            targets.append(Poster(imagePath, subdir, score, descriptors))
+                        
+            targets.append(Poster(imagePath, subdir, score, kp, descriptors))
 
 
 
@@ -73,10 +78,19 @@ def writeTitle(imageWebcam,imgWebcam, bestMatch, matrix):
     return cv2.add(img1_bg,img2_fg)
 
 
+
+def draw(img, corners, imgpts):
+    corner = tuple(corners[0].ravel())
+    img = cv2.line(img, corner, tuple(imgpts[0].ravel()), (255,0,0), 5)
+    img = cv2.line(img, corner, tuple(imgpts[1].ravel()), (0,255,0), 5)
+    img = cv2.line(img, corner, tuple(imgpts[2].ravel()), (0,0,255), 5)
+    return img
+
 def main():
     mtx, dist = cam.load() #Load camera calibration file
 
     RetrieveImages()
+
     capture = cv2.VideoCapture(0) # Webcam
     sift = cv2.SIFT.create()
     bf = cv2.BFMatcher(crossCheck= False)
@@ -109,7 +123,7 @@ def main():
         if not bestMatch.empty():
 
             targetImage = cv2.imread(bestMatch.poster.imagePath)
-            kpTarget, desTarget = sift.detectAndCompute(targetImage, None)
+            kpTarget = bestMatch.poster.kp
             
             # Draws lines between image target and captured image
             imageFeatures = cv2.drawMatches(targetImage, kpTarget, imgWebcam, kpWebcam, bestMatch.matches, None, flags=2)
@@ -128,11 +142,21 @@ def main():
             imageBounds = cv2.polylines(imgWebcam, [np.int32(dest)], True, (255,0,255),3)
             cv2.imshow('ImageBounds',imageBounds)
 
-            
-            ret,rvecs, tvecs = cv2.solvePnP(targetSrcPoints, webcamSrcPoints,mtx, dist)
-            
-            
-            
+            #Draw cube
+            criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+            objp = np.zeros((2*2,3), np.float32)
+            objp[:,:2] = np.mgrid[0:2,0:2].T.reshape(-1,2)
+            axis = np.float32([[1,0,0], [0,1,0], [0,0,-1]]).reshape(-1,3)
+
+            ret,rvecs, tvecs, _ = cv2.solvePnPRansac(objp, dest,mtx, dist)
+            if ret == True:
+                print(ret)
+                # project 3D points to image plane
+                imgpts, jac = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
+                img = imgWebcam.copy()
+                img = draw(img,dest,imgpts)
+                cv2.imshow('img',img)
+
             title = writeTitle(imgWebcam, imgWebcam,bestMatch, matrix)
             imgWebcam = title
 
@@ -149,3 +173,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
