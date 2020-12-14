@@ -3,6 +3,7 @@ import os
 import cv2
 import numpy as np
 import camera_calibration as cam
+import util
 
 import json
 
@@ -62,7 +63,7 @@ def createPoster(movieName, classification, imagePath):
 
     #Create features files
     image2 = cv2.imread(new_file_dir)
-    sift = cv2.SIFT.create()
+    sift = util.sift_create()
     kp, des = sift.detectAndCompute(image2, None)
 
 

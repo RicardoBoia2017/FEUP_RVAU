@@ -5,6 +5,7 @@ import time
 import sys
 import camera_calibration as cam
 import Preparation as prep
+import util
 
 rootdir = "images_db"
 targets = []
@@ -47,7 +48,6 @@ def RetrieveImages():
                 for name in files2:
                     if name == "data.json":
                         score, kp, descriptors = prep.read_from_jason(prep.getDataPath(subdir))
-                        print(score)
                     else:
                         imagePath = rootdir + '/' + subdir + '/' + name
                         
@@ -81,10 +81,14 @@ def writeTitle(imageWebcam,imgWebcam, bestMatch, matrix):
 
 
 def draw(img, corners, imgpts):
-    corner = tuple(corners[0].astype(int).ravel())
-    img = cv2.line(img, corner, tuple(imgpts[0].astype(int).ravel()), (255,0,0), 5)
-    img = cv2.line(img, corner, tuple(imgpts[1].astype(int).ravel()), (0,255,0), 5)
-    img = cv2.line(img, corner, tuple(imgpts[2].astype(int).ravel()), (0,0,255), 5)
+    imgpts = np.int32(imgpts).reshape(-1,2)
+    # draw ground floor in green
+    img = cv2.drawContours(img, [imgpts[:4]],-1,(0,255,0),-3)
+    # draw pillars in blue color
+    for i,j in zip(range(4),range(4,8)):
+        img = cv2.line(img, tuple(imgpts[i]), tuple(imgpts[j]),(255),3)
+    # draw top layer in red color
+    img = cv2.drawContours(img, [imgpts[4:]],-1,(0,0,255),3)
     return img
 
 
@@ -99,6 +103,9 @@ def getBestMatch(desWebcam):
         good = []
 
         #Gets matching points
+        if(len(matches) < 2):
+            continue
+
         for m,n in matches:
             if m.distance < 0.75 * n.distance:
                 good.append(m)
@@ -121,7 +128,9 @@ def drawCube(imgWebcam, targetImage, matrix, mtx, dist):
     targetHeigth, targetWidth, _ = targetImage.shape
     objp = np.zeros((2*2,3), np.float32)
     objp[:,:2] = np.mgrid[0:2,0:2].T.reshape(-1,2)
-    axis = np.float32([[1,0,0], [0,1,0], [0,0,-1]]).reshape(-1,3)
+    axis = np.float32([[0,0,0], [0,1,0], [1,1,0], [1,0,0],
+                   [0,0,-1],[0,1,-1],[1,1,-1],[1,0,-1] ])
+    # axis = np.float32([[1,0,0], [0,1,0], [0,0,-1]]).reshape(-1,3)
 
     pts = np.float32([[0,0], [targetWidth - 1, 0], [0,targetHeigth - 1], [targetWidth - 1, targetHeigth - 1]]).reshape(-1,1,2)
     dest = cv2.perspectiveTransform(pts, matrix)
@@ -139,39 +148,42 @@ def main():
     RetrieveImages()
 
     capture = cv2.VideoCapture(0) # Webcam
-    sift = cv2.SIFT.create()
+
+    sift = util.sift_create()
 
     while True:
         
         #Computer Webcam
         _,imgWebcam = capture.read()
         imgWebcam = cam.undistort(imgWebcam, mtx, dist)
-
+     
         #Detect image from webcam
         kpWebcam, desWebcam = sift.detectAndCompute(imgWebcam, None)
-        bestMatch = getBestMatch(desWebcam)
         
-        # If images have more than 20 matching points
-        if not bestMatch.empty():
-
-            targetImage = bestMatch.poster.image
-            kpTarget = bestMatch.poster.kp
+        if desWebcam is not None:
+            bestMatch = getBestMatch(desWebcam)
             
-            # Draws lines between image target and captured image
-            imageFeatures = cv2.drawMatches(targetImage, kpTarget, imgWebcam, kpWebcam, bestMatch.matches, None, flags=2)
-            cv2.imshow('Images', imageFeatures) 
+            # If images have more than 20 matching points
+            if not bestMatch.empty():
+
+                targetImage = bestMatch.poster.image
+                kpTarget = bestMatch.poster.kp
+                
+                # Draws lines between image target and captured image
+                imageFeatures = cv2.drawMatches(targetImage, kpTarget, imgWebcam, kpWebcam, bestMatch.matches, None, flags=2)
+                cv2.imshow('Images', imageFeatures) 
 
 
-            # Calculate homography
-            targetSrcPoints = np.float32([kpTarget[m.queryIdx].pt for m in bestMatch.matches]).reshape(-1,1,2)
-            webcamSrcPoints = np.float32([kpWebcam[m.trainIdx].pt for m in bestMatch.matches]).reshape(-1,1,2)
-            matrix, _ = cv2.findHomography(targetSrcPoints, webcamSrcPoints, cv2.RANSAC, 5)
+                # Calculate homography
+                targetSrcPoints = np.float32([kpTarget[m.queryIdx].pt for m in bestMatch.matches]).reshape(-1,1,2)
+                webcamSrcPoints = np.float32([kpWebcam[m.trainIdx].pt for m in bestMatch.matches]).reshape(-1,1,2)
+                matrix, _ = cv2.findHomography(targetSrcPoints, webcamSrcPoints, cv2.RANSAC, 5)
 
-            
-            if matrix is not None:
-                drawImageBounds(imgWebcam, targetImage, matrix)
-                drawCube(imgWebcam, targetImage, matrix, mtx, dist)
-                imgWebcam = writeTitle(imgWebcam, imgWebcam,bestMatch, matrix)
+                
+                if matrix is not None:
+                    drawImageBounds(imgWebcam, targetImage, matrix)
+                    drawCube(imgWebcam, targetImage, matrix, mtx, dist)
+                    imgWebcam = writeTitle(imgWebcam, imgWebcam,bestMatch, matrix)
 
 
         cv2.imshow('Webcam', imgWebcam)
