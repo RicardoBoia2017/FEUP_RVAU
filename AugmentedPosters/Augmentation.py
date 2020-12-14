@@ -81,10 +81,10 @@ def writeTitle(imageWebcam,imgWebcam, bestMatch, matrix):
 
 
 def draw(img, corners, imgpts):
-    corner = tuple(corners[0].ravel())
-    img = cv2.line(img, corner, tuple(imgpts[0].ravel()), (255,0,0), 5)
-    img = cv2.line(img, corner, tuple(imgpts[1].ravel()), (0,255,0), 5)
-    img = cv2.line(img, corner, tuple(imgpts[2].ravel()), (0,0,255), 5)
+    corner = tuple(corners[0].astype(int).ravel())
+    img = cv2.line(img, corner, tuple(imgpts[0].astype(int).ravel()), (255,0,0), 5)
+    img = cv2.line(img, corner, tuple(imgpts[1].astype(int).ravel()), (0,255,0), 5)
+    img = cv2.line(img, corner, tuple(imgpts[2].astype(int).ravel()), (0,0,255), 5)
     return img
 
 
@@ -109,6 +109,29 @@ def getBestMatch(desWebcam):
     return bestMatch
                 
 
+def drawImageBounds(imgWebcam, targetImage, matrix):
+    targetHeigth, targetWidth, _ = targetImage.shape
+    pts = np.float32([[0,0], [0,targetHeigth - 1], [targetWidth - 1, targetHeigth - 1], [targetWidth - 1, 0]]).reshape(-1,1,2)
+    dest = cv2.perspectiveTransform(pts, matrix)
+    imageBounds = cv2.polylines(imgWebcam, [np.int32(dest)], True, (255,0,255),3)
+    cv2.imshow('ImageBounds',imageBounds)
+
+
+def drawCube(imgWebcam, targetImage, matrix, mtx, dist):
+    targetHeigth, targetWidth, _ = targetImage.shape
+    objp = np.zeros((2*2,3), np.float32)
+    objp[:,:2] = np.mgrid[0:2,0:2].T.reshape(-1,2)
+    axis = np.float32([[1,0,0], [0,1,0], [0,0,-1]]).reshape(-1,3)
+
+    pts = np.float32([[0,0], [targetWidth - 1, 0], [0,targetHeigth - 1], [targetWidth - 1, targetHeigth - 1]]).reshape(-1,1,2)
+    dest = cv2.perspectiveTransform(pts, matrix)
+    ret,rvecs, tvecs, _ = cv2.solvePnPRansac(objp, dest, mtx, dist)
+    if ret == True:
+        # project 3D points to image plane
+        imgpts, _ = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
+        img = imgWebcam.copy()
+        img = draw(img,dest,imgpts)
+        cv2.imshow('Cube',img)
 
 def main():
     mtx, dist = cam.load() #Load camera calibration file
@@ -139,35 +162,16 @@ def main():
             cv2.imshow('Images', imageFeatures) 
 
 
-            # Draw image bounds
+            # Calculate homography
             targetSrcPoints = np.float32([kpTarget[m.queryIdx].pt for m in bestMatch.matches]).reshape(-1,1,2)
             webcamSrcPoints = np.float32([kpWebcam[m.trainIdx].pt for m in bestMatch.matches]).reshape(-1,1,2)
             matrix, _ = cv2.findHomography(targetSrcPoints, webcamSrcPoints, cv2.RANSAC, 5)
 
             
             if matrix is not None:
-                targetHeigth, targetWidth, _ = targetImage.shape
-                pts = np.float32([[0,0], [0,targetHeigth - 1], [targetWidth - 1, targetHeigth - 1], [targetWidth - 1, 0]]).reshape(-1,1,2)
-                dest = cv2.perspectiveTransform(pts, matrix)
-                imageBounds = cv2.polylines(imgWebcam, [np.int32(dest)], True, (255,0,255),3)
-                cv2.imshow('ImageBounds',imageBounds)
-
-                #Draw cube np.int32(
-                # criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-                # objp = np.zeros((2*2,3), np.float32)
-                # objp[:,:2] = np.mgrid[0:2,0:2].T.reshape(-1,2)
-                # axis = np.float32([[1,0,0], [0,1,0], [0,0,-1]]).reshape(-1,3)
-
-                # ret,rvecs, tvecs, _ = cv2.solvePnPRansac(objp, dest,mtx, dist)
-                # if ret == True:
-                #     # project 3D points to image plane
-                #     imgpts, jac = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
-                #     img = imgWebcam.copy()
-                #     img = draw(img,dest,imgpts)
-                #     cv2.imshow('img',img)
-
-                title = writeTitle(imgWebcam, imgWebcam,bestMatch, matrix)
-                imgWebcam = title
+                drawImageBounds(imgWebcam, targetImage, matrix)
+                drawCube(imgWebcam, targetImage, matrix, mtx, dist)
+                imgWebcam = writeTitle(imgWebcam, imgWebcam,bestMatch, matrix)
 
 
         cv2.imshow('Webcam', imgWebcam)
