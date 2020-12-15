@@ -4,11 +4,13 @@ import numpy as np
 import time
 import sys
 import camera_calibration as cam
-import Preparation as prep
+import preparation as prep
 import util
+import argparse
 
 rootdir = "images_db"
 targets = []
+TUTORIAL_MODE = False
 
 
 
@@ -38,7 +40,7 @@ class Match:
 
 
 #Get posters from database
-def RetrieveImages():
+def retrieveImages():
     for _, dirs, _ in os.walk(rootdir):
         for subdir in dirs:
             for _, _, files2 in os.walk(rootdir + "/" + subdir):
@@ -47,37 +49,11 @@ def RetrieveImages():
                 score = 0
                 for name in files2:
                     if name == "data.json":
-                        score, kp, descriptors = prep.read_from_jason(prep.getDataPath(subdir))
+                        score, kp, descriptors = prep.readjson(prep.getDataPath(subdir))
                     else:
                         imagePath = rootdir + '/' + subdir + '/' + name
                         
             targets.append(Poster(imagePath, subdir, score, kp, descriptors))
-
-
-
-def writeTitle(imageWebcam,imgWebcam, bestMatch, matrix):
-
-    webcamHeight,webcamWidth,_ = imgWebcam.shape
-
-    blank = np.zeros((webcamHeight,webcamWidth,3), np.uint8)
-
-    (_, textHeight), _ = cv2.getTextSize(bestMatch.poster.movieName, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 1)
-    org = (0, 0 + textHeight)
-    cv2.putText(blank, bestMatch.poster.movieName, (org), cv2.FONT_HERSHEY_SIMPLEX , 0.8, (0,255,0), 1, cv2.LINE_AA)
-    blank = cv2.warpPerspective(blank, matrix, (webcamWidth, webcamHeight))
-
-    roi = imgWebcam[0:webcamHeight, 0:webcamWidth]
-
-    img2gray = cv2.cvtColor(blank,cv2.COLOR_BGR2GRAY)
-    _, mask = cv2.threshold(img2gray, 10, 255, cv2.THRESH_BINARY)
-    mask_inv = cv2.bitwise_not(mask)
-
-    img1_bg = cv2.bitwise_and(roi,roi,mask = mask_inv)
-
-    img2_fg = cv2.bitwise_and(blank,blank,mask = mask)
-
-    return cv2.add(img1_bg,img2_fg)
-
 
 
 def getBestMatch(desWebcam):
@@ -101,6 +77,7 @@ def getBestMatch(desWebcam):
     return bestMatch
            
 
+
 def drawImageBounds(imgWebcam, targetImage, matrix):
     targetHeigth, targetWidth, _ = targetImage.shape
     pts = np.float32([[0,0], [0,targetHeigth - 1], [targetWidth - 1, targetHeigth - 1], [targetWidth - 1, 0]]).reshape(-1,1,2)
@@ -109,77 +86,96 @@ def drawImageBounds(imgWebcam, targetImage, matrix):
     cv2.imshow('ImageBounds',imageBounds)
 
 
-def draw(img, corners, imgpts):
-    imgpts = np.int32(imgpts).reshape(-1,2)
 
-    # draw top layer
-    img = cv2.drawContours(img, [imgpts[4:]],-1,(0,0,0),2)
+def writeTitle(imageWebcam,imgWebcam, bestMatch, matrix):
 
-    # draw bottom layer
-    img = cv2.drawContours(img, [imgpts[:4]],-1,(0,0,0),2)
+    webcamHeight,webcamWidth,_ = imgWebcam.shape
+    blank = np.zeros((webcamHeight,webcamWidth,3), np.uint8)
 
-    # draw sides
-    for i,j in zip(range(4),range(4,8)):
-        img = cv2.line(img, tuple(imgpts[i]), tuple(imgpts[j]),(0,0,0),2)
+    (_, textHeight), _ = cv2.getTextSize(bestMatch.poster.movieName, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 1)
+    org = (0, 0 + textHeight)
+    cv2.putText(blank, bestMatch.poster.movieName, (org), cv2.FONT_HERSHEY_SIMPLEX , 0.8, (0,255,0), 1, cv2.LINE_AA)
+    blank = cv2.warpPerspective(blank, matrix, (webcamWidth, webcamHeight))
 
-    return img
+    roi = imgWebcam[0:webcamHeight, 0:webcamWidth]
 
-def drawCube(imgWebcam, targetImage, matrix, mtx, dist):
+    img2gray = cv2.cvtColor(blank,cv2.COLOR_BGR2GRAY)
+    _, mask = cv2.threshold(img2gray, 10, 255, cv2.THRESH_BINARY)
+    mask_inv = cv2.bitwise_not(mask)
+
+    img1_bg = cv2.bitwise_and(roi,roi,mask = mask_inv)
+    img2_fg = cv2.bitwise_and(blank,blank,mask = mask)
+
+    return cv2.add(img1_bg,img2_fg)
+
+
+def drawCube(imgWebcam, targetImage, matrix, camera, h):
     targetHeigth, targetWidth, _ = targetImage.shape
     objp = np.zeros((2*2,3), np.float32)
     objp[:,:2] = np.mgrid[0:2,0:2].T.reshape(-1,2)
-    # axis = np.float32([[0,0,0], [0,1,0], [1,1,0], [1,0,0],
-    #                [0,0,-1],[0,1,-1],[1,1,-1],[1,0,-1]])
-    axis = np.float32([[0,0,-1], [0,1,-1], [1,1,-1], [1,0,-1],
-                [0,0,-2],[0,1,-2],[1,1,-2],[1,0,-2]])
+    
+    axis = np.float32([[0,0,0 - h], [0,1,0 - h], [1,1,0 - h], [1,0,0 - h], [0,0,-1 - h], [0,1,-1 - h], [1,1,-1 - h], [1,0,-1 - h]])
 
-    cube_size = 50
-    x0 = (targetWidth-cube_size)/2
-    y0 = (targetHeigth-cube_size)/2
+    cube_size = 100
+    x0 = (targetWidth-cube_size) / 2
+    y0 = (targetHeigth-cube_size) / 2
     x1 = x0 + cube_size
     y1 = y0 + cube_size
 
     pts = np.float32([[x0,y0], [x1, y0], [x0,y1], [x1, y1]]).reshape(-1,1,2)
-    # pts = np.float32([[0,0], [targetWidth - 1, 0], [0,targetHeigth - 1], [targetWidth - 1, targetHeigth - 1]]).reshape(-1,1,2)
     dest = cv2.perspectiveTransform(pts, matrix)
-    ret,rvecs, tvecs, _ = cv2.solvePnPRansac(objp, dest, mtx, dist)
+    ret,rvecs, tvecs, _ = cv2.solvePnPRansac(objp, dest, camera.mtx, camera.dist)
 
     if ret == True:
         # project 3D points to image plane
-        imgpts, _ = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
-        if any(x<0 for x in imgpts.reshape(-1)) == False:  
-            img = draw(imgWebcam,dest,imgpts)
+        imgpts, _ = cv2.projectPoints(axis, rvecs, tvecs, camera.mtx, camera.dist)
+        
+        if not util.isValid(imgpts):  
+            imgpts = np.int32(imgpts).reshape(-1,2)
+
+            # draw top layer
+            imgWebcam = cv2.drawContours(imgWebcam, [imgpts[4:]],-1,(0,0,0),2)
+
+            # draw bottom layer
+            imgWebcam = cv2.drawContours(imgWebcam, [imgpts[:4]],-1,(0,0,0),2)
+
+            # draw sides
+            for i,j in zip(range(4),range(4,8)):
+                imgWebcam = cv2.line(imgWebcam, tuple(imgpts[i]), tuple(imgpts[j]),(0,0,0),2)
+
+
 
 def main():
-    mtx, dist = cam.load() #Load camera calibration file
-
-    RetrieveImages()
-
-    capture = cv2.VideoCapture(0) # Webcam
-
+    camera = cam.Camera() #Load camera calibration file
+    retrieveImages() #Load database
+    capture = cv2.VideoCapture(0) # Start webcam
     sift = util.sift_create()
 
     while True:
         
         #Computer Webcam
         _,imgWebcam = capture.read()
-        imgWebcam = cam.undistort(imgWebcam, mtx, dist)
-     
-        #Detect image from webcam
-        kpWebcam, desWebcam = sift.detectAndCompute(imgWebcam, None)
         
+        #Process image
+        imgWebcam = camera.undistort(imgWebcam)
+        gray = cv2.cvtColor(imgWebcam, cv2.COLOR_BGR2GRAY)
+        kpWebcam, desWebcam = sift.detectAndCompute(gray, None)
+
         if desWebcam is not None:
+
+            #Detect image from webcam
             bestMatch = getBestMatch(desWebcam)
-            
+
             # If images have more than 20 matching points
             if not bestMatch.empty():
 
                 targetImage = bestMatch.poster.image
                 kpTarget = bestMatch.poster.kp
                 
-                # Draws lines between image target and captured image
-                imageFeatures = cv2.drawMatches(targetImage, kpTarget, imgWebcam, kpWebcam, bestMatch.matches, None, flags=2)
-                cv2.imshow('Images', imageFeatures) 
+                if(TUTORIAL_MODE):
+                    # Draws lines between image target and captured image
+                    imageFeatures = cv2.drawMatches(targetImage, kpTarget, imgWebcam, kpWebcam, bestMatch.matches, None, flags=2)
+                    cv2.imshow('Images', imageFeatures) 
 
 
                 # Calculate homography
@@ -189,8 +185,13 @@ def main():
 
                 
                 if matrix is not None:
-                    drawImageBounds(imgWebcam, targetImage, matrix)
-                    drawCube(imgWebcam, targetImage, matrix, mtx, dist)
+                    
+                    if(TUTORIAL_MODE):
+                        drawImageBounds(imgWebcam, targetImage, matrix)
+
+                    for i in range(bestMatch.poster.score):
+                        drawCube(imgWebcam, targetImage, matrix, camera, 2*i)
+
                     imgWebcam = writeTitle(imgWebcam, imgWebcam,bestMatch, matrix)
 
 
@@ -205,5 +206,12 @@ def main():
 
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('--tutorial', '-t', action='store_true')
+    args = parser.parse_args()
+    
+    TUTORIAL_MODE = args.tutorial
+    
     main()
 

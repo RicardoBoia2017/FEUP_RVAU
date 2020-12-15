@@ -3,14 +3,40 @@ import cv2 as cv
 import glob
 import json
 import os
+import sys
+
 
 CHECKERBOARD = (6, 9)  # Define the dimensions of checkerboard 
 CALIBRATION_PATH = "calibration/"
-CALIBRATION_FILE = "calibration/camera_calibration.json"
+CALIBRATION_FILE = CALIBRATION_PATH + "camera_calibration.json"
 
 
+class Camera:
+    def __init__(self):
+        mtx, dist = load()
+        self.mtx = mtx
+        self.dist = dist
 
+    def undistort(self, img):
+        return undistort(img, self.mtx, self.dist)
+
+
+def calibrate():
+    if os.path.isfile(CALIBRATION_FILE) is True:
+        print("CALIBRATION: Calibration file already exists")
+    else:
+        print("CALIBRATION: Calibrate camera ...")
+        ret, mtx, dist = calibrateCamera()
+        print("CALIBRATION: RMS - ", ret)
+        save(mtx, dist)
+        print("CALIBRATION: Config file saved")
+
+        
 def load():
+    if os.path.isfile(CALIBRATION_FILE) is False:
+        print("CALIBRATION: Calibration file missing")
+        sys.exit()
+
     with open(CALIBRATION_FILE) as f:
         data = json.load(f)
         mtx  =  np.array(data["camera_matrix"])
@@ -26,15 +52,8 @@ def save(mtx, dist):
         json.dump(data, f)
 
 
-def calibrate():
-    if os.path.isfile(CALIBRATION_FILE) is True:
-        print("CALIBRATION: Calibration file already exists")
-    else:
-        print("CALIBRATION: Calibrate camera ...")
-        ret, mtx, dist = calibrateCamera()
-        print("CALIBRATION: RMS - ", ret)
-        save(mtx, dist)
-        print("CALIBRATION: Config file saved")
+def delete():
+    os.remove(CALIBRATION_FILE)
 
 
 
@@ -80,6 +99,8 @@ def calibrateCameraLive():
     ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
     return ret, mtx, dist
 
+
+
 def calibrateCamera():
 
     # termination criteria - accuracy(epsilon) or number of iterations 
@@ -95,7 +116,6 @@ def calibrateCamera():
     objp[:,:2] = np.mgrid[0:CHECKERBOARD[0],0:CHECKERBOARD[1]].T.reshape(-1,2)
     
     images = glob.glob(CALIBRATION_PATH + '*.jpg')
-    
     
     for filename in images:
         img = cv.imread(filename)
@@ -119,8 +139,8 @@ def calibrateCamera():
     return ret, mtx, dist
 
 
-def undistort(img, mtx, dist):
 
+def undistort(img, mtx, dist):
     h,  w = img.shape[:2]
     newcameramtx, roi=cv.getOptimalNewCameraMatrix(mtx,dist,(w,h),1,(w,h))
 
@@ -131,11 +151,3 @@ def undistort(img, mtx, dist):
     x,y,w,h = roi
     dst = dst[y:y+h, x:x+w]
     return dst
-
-
-
-def drawCorners(img, corners2, ret):
-    # Draw and display the corners
-    cv.drawChessboardCorners(img, CHECKERBOARD, corners2, ret)
-    cv.imshow('img', img)
-    cv.waitKey(0)

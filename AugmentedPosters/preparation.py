@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 import camera_calibration as cam
 import util
-
+import argparse
 import json
 
 DATABASE_DIR = "images_db/"
@@ -13,10 +13,10 @@ DATABASE_DIR = "images_db/"
 def getDataPath(movieName):
     return DATABASE_DIR + movieName + '/' + 'data.json'
 
-def save_2_jason(classification, kps, des, path):
+def save2json(score, kps, des, path):
     data = {}  
     cnt = 0
-    data['classification'] = classification
+    data['score'] = score
     data['descriptors'] = np.asarray(des).tolist()
     for i in kps:
         data['KeyPoint_%d'%cnt] = []  
@@ -28,22 +28,24 @@ def save_2_jason(classification, kps, des, path):
         json.dump(data, outfile)
 
 
-def read_from_jason(path):
+def readjson(path):
     des = []
     kps = []   
-    classification = 0
+    score = 0
     with open(path) as json_file:  
         data = json.load(json_file)
-        classification = data['classification']
+        score = int(data['score'])
         des = np.array(data['descriptors'], dtype=np.float32)
         cnt = 0
         while(data.__contains__('KeyPoint_%d'%cnt)):
             pt = cv2.KeyPoint(x=data['KeyPoint_%d'%cnt][0]['x'],y=data['KeyPoint_%d'%cnt][1]['y'], _size=data['KeyPoint_%d'%cnt][2]['size'])
             kps.append(pt)
             cnt+=1
-    return classification, kps, des
+    return score, kps, des
 
-def createPoster(movieName, classification, imagePath):
+
+
+def createPoster(movieName, score, imagePath):
     dir = DATABASE_DIR + movieName
 
     #Check if poster already exists in databases
@@ -64,25 +66,36 @@ def createPoster(movieName, classification, imagePath):
     #Create features files
     image2 = cv2.imread(new_file_dir)
     sift = util.sift_create()
-    kp, des = sift.detectAndCompute(image2, None)
 
+    gray = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)   
+    kp, des = sift.detectAndCompute(gray, None)
 
-    #Save descriptors and keypoints in file
-    save_2_jason(classification, kp, des, getDataPath(movieName))
+    #Save descriptors keypoints and score in file
+    save2json(score, kp, des, getDataPath(movieName))
+
 
 
 def main():
-    movieName = sys.argv[1]
-    classification = sys.argv[2]
-    imagePath = sys.argv[3]
 
-    cam.calibrate()
-    createPoster(movieName, classification, imagePath)
+    parser = argparse.ArgumentParser(description='Prepare setup')
+    group = parser.add_mutually_exclusive_group(required = True)
+    group.add_argument('--add', '-a', nargs=3, metavar=('name', 'score', 'path'), action='store')
+    group.add_argument('--calibrate', '-c', action='store_true')
+    group.add_argument('--clean', action='store_true')
 
-    #Show image
-    #cv2.imshow('Image', image)
-    #cv2.waitKey(0)
+    args = parser.parse_args()
 
+    if args.calibrate:
+        cam.calibrate()
+    
+    if args.add:
+        name = args.add[0]
+        score = args.add[1]
+        path = args.add[2]
+        createPoster(name, score, path)
+
+    if args.clean:
+        cam.delete()
 
 
 if __name__ == "__main__":

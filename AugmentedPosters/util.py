@@ -8,3 +8,6 @@ def sift_create():
     elif version == 4:
         sift = cv2.SIFT.create()
     return sift
+
+def isValid(pts):
+    return any(x<0 for x in pts.reshape(-1))
