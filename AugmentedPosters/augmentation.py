@@ -130,7 +130,7 @@ def drawCube(imgWebcam, targetImage, matrix, camera, h):
 
     pts = np.float32([[x0,y0], [x1, y0], [x0,y1], [x1, y1]]).reshape(-1,1,2)
     dest = cv2.perspectiveTransform(pts, matrix)
-    ret,rvecs, tvecs, _ = cv2.solvePnPRansac(objp, dest, camera.mtx, camera.dist)
+    ret,rvecs, tvecs = cv2.solvePnP(objp, dest, camera.mtx, camera.dist)
 
     if ret == True:
         # project 3D points to image plane
@@ -196,7 +196,7 @@ def main():
                         drawImageBounds(imgWebcam, targetImage, matrix)
 
                     for i in range(bestMatch.poster.score):
-                        drawCube(imgWebcam, targetImage, matrix, camera, 2*i)
+                        drawCube(imgWebcam, targetImage, matrix, camera, 1.5*i)
 
                     imgWebcam = writeTitle(imgWebcam, imgWebcam,bestMatch, matrix)
 
