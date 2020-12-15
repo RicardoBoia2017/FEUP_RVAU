@@ -29,9 +29,10 @@ class Poster:
 
 
 class Match:
-    def __init__(self, poster, matches):
+    def __init__(self, poster, matches, score):
         self.poster = poster
         self.matches = matches
+        self.score = score
     def __repr__(self):
         return('Poster: ' + self.poster.imagePath)
     def empty(self):
@@ -59,7 +60,7 @@ def retrieveImages():
 def getBestMatch(desWebcam):
 
     bf = cv2.BFMatcher(crossCheck= False)
-    bestMatch = Match(None, [])
+    bestMatch = Match(None, [], 0)
 
     #Compare webcam image with posters
     for target in targets:
@@ -71,9 +72,14 @@ def getBestMatch(desWebcam):
             if m.distance < 0.75 * n.distance:
                 good.append(m)
 
-        if (len(good) > 20) and (len(good) > len(bestMatch.matches)):
-                bestMatch = Match(target, good)
 
+        score = len(good)/len(target.descriptors)
+        current_score = bestMatch.score
+
+        # print(len(good)/target.descriptors)
+        if (len(good) > 20) and (score > current_score):
+                bestMatch = Match(target, good, score)
+        
     return bestMatch
            
 
@@ -155,7 +161,7 @@ def main():
         
         #Computer Webcam
         _,imgWebcam = capture.read()
-        
+
         #Process image
         imgWebcam = camera.undistort(imgWebcam)
         gray = cv2.cvtColor(imgWebcam, cv2.COLOR_BGR2GRAY)
