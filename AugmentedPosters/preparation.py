@@ -79,7 +79,7 @@ def main():
 
     parser = argparse.ArgumentParser(description='Prepare setup')
     group = parser.add_mutually_exclusive_group(required = True)
-    group.add_argument('--add', '-a', nargs=3, metavar=('name', 'score', 'path'), action='store')
+    group.add_argument('--add', '-a', nargs="*", metavar=('path', 'score', 'name'), action='store')
     group.add_argument('--calibrate', '-c', action='store_true')
     group.add_argument('--clean', action='store_true')
 
@@ -89,9 +89,16 @@ def main():
         cam.calibrate()
     
     if args.add:
-        name = args.add[0]
+        if len(sys.argv) < 5:
+            print("usage: preparation.py [-h] (--add path score name | --calibrate | --clean)")
+            print("preparation.py: error: argument --add/-a: expected at least 3 argument(s)")
+            sys.exit()
+        path = args.add[0]
         score = args.add[1]
-        path = args.add[2]
+        name = args.add[2]
+        for i in range(3, len(sys.argv) - 2):
+            name += " " + args.add[i]
+
         createPoster(name, score, path)
 
     if args.clean:
