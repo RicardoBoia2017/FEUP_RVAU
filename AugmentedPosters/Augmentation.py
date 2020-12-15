@@ -80,18 +80,6 @@ def writeTitle(imageWebcam,imgWebcam, bestMatch, matrix):
 
 
 
-def draw(img, corners, imgpts):
-    imgpts = np.int32(imgpts).reshape(-1,2)
-    # draw ground floor in green
-    img = cv2.drawContours(img, [imgpts[:4]],-1,(0,255,0),-3)
-    # draw pillars in blue color
-    for i,j in zip(range(4),range(4,8)):
-        img = cv2.line(img, tuple(imgpts[i]), tuple(imgpts[j]),(255),3)
-    # draw top layer in red color
-    img = cv2.drawContours(img, [imgpts[4:]],-1,(0,0,255),3)
-    return img
-
-
 def getBestMatch(desWebcam):
 
     bf = cv2.BFMatcher(crossCheck= False)
@@ -103,9 +91,6 @@ def getBestMatch(desWebcam):
         good = []
 
         #Gets matching points
-        if(len(matches) < 2):
-            continue
-
         for m,n in matches:
             if m.distance < 0.75 * n.distance:
                 good.append(m)
@@ -114,7 +99,7 @@ def getBestMatch(desWebcam):
                 bestMatch = Match(target, good)
 
     return bestMatch
-                
+           
 
 def drawImageBounds(imgWebcam, targetImage, matrix):
     targetHeigth, targetWidth, _ = targetImage.shape
@@ -124,23 +109,46 @@ def drawImageBounds(imgWebcam, targetImage, matrix):
     cv2.imshow('ImageBounds',imageBounds)
 
 
+def draw(img, corners, imgpts):
+    imgpts = np.int32(imgpts).reshape(-1,2)
+
+    # draw top layer
+    img = cv2.drawContours(img, [imgpts[4:]],-1,(0,0,0),2)
+
+    # draw bottom layer
+    img = cv2.drawContours(img, [imgpts[:4]],-1,(0,0,0),2)
+
+    # draw sides
+    for i,j in zip(range(4),range(4,8)):
+        img = cv2.line(img, tuple(imgpts[i]), tuple(imgpts[j]),(0,0,0),2)
+
+    return img
+
 def drawCube(imgWebcam, targetImage, matrix, mtx, dist):
     targetHeigth, targetWidth, _ = targetImage.shape
     objp = np.zeros((2*2,3), np.float32)
     objp[:,:2] = np.mgrid[0:2,0:2].T.reshape(-1,2)
-    axis = np.float32([[0,0,0], [0,1,0], [1,1,0], [1,0,0],
-                   [0,0,-1],[0,1,-1],[1,1,-1],[1,0,-1] ])
-    # axis = np.float32([[1,0,0], [0,1,0], [0,0,-1]]).reshape(-1,3)
+    # axis = np.float32([[0,0,0], [0,1,0], [1,1,0], [1,0,0],
+    #                [0,0,-1],[0,1,-1],[1,1,-1],[1,0,-1]])
+    axis = np.float32([[0,0,-1], [0,1,-1], [1,1,-1], [1,0,-1],
+                [0,0,-2],[0,1,-2],[1,1,-2],[1,0,-2]])
 
-    pts = np.float32([[0,0], [targetWidth - 1, 0], [0,targetHeigth - 1], [targetWidth - 1, targetHeigth - 1]]).reshape(-1,1,2)
+    cube_size = 50
+    x0 = (targetWidth-cube_size)/2
+    y0 = (targetHeigth-cube_size)/2
+    x1 = x0 + cube_size
+    y1 = y0 + cube_size
+
+    pts = np.float32([[x0,y0], [x1, y0], [x0,y1], [x1, y1]]).reshape(-1,1,2)
+    # pts = np.float32([[0,0], [targetWidth - 1, 0], [0,targetHeigth - 1], [targetWidth - 1, targetHeigth - 1]]).reshape(-1,1,2)
     dest = cv2.perspectiveTransform(pts, matrix)
     ret,rvecs, tvecs, _ = cv2.solvePnPRansac(objp, dest, mtx, dist)
+
     if ret == True:
         # project 3D points to image plane
         imgpts, _ = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
-        img = imgWebcam.copy()
-        img = draw(img,dest,imgpts)
-        cv2.imshow('Cube',img)
+        if any(x<0 for x in imgpts.reshape(-1)) == False:  
+            img = draw(imgWebcam,dest,imgpts)
 
 def main():
     mtx, dist = cam.load() #Load camera calibration file
