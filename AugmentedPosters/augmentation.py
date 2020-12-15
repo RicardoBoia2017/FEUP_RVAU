@@ -73,7 +73,7 @@ def getBestMatch(desWebcam):
                 good.append(m)
 
 
-        score = len(good)/len(target.descriptors)
+        score = 1.0 * len(good)/len(target.descriptors)
         current_score = bestMatch.score
 
         # print(len(good)/target.descriptors)
@@ -122,7 +122,7 @@ def drawCube(imgWebcam, targetImage, matrix, camera, h):
     
     axis = np.float32([[0,0,0 - h], [0,1,0 - h], [1,1,0 - h], [1,0,0 - h], [0,0,-1 - h], [0,1,-1 - h], [1,1,-1 - h], [1,0,-1 - h]])
 
-    cube_size = 100
+    cube_size = min(targetHeigth, targetWidth)/5
     x0 = (targetWidth-cube_size) / 2
     y0 = (targetHeigth-cube_size) / 2
     x1 = x0 + cube_size
@@ -163,7 +163,6 @@ def main():
         _,imgWebcam = capture.read()
 
         #Process image
-        imgWebcam = camera.undistort(imgWebcam)
         gray = cv2.cvtColor(imgWebcam, cv2.COLOR_BGR2GRAY)
         kpWebcam, desWebcam = sift.detectAndCompute(gray, None)
 
