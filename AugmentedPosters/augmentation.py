@@ -78,7 +78,7 @@ def getBestMatch(desWebcam):
 
         # print(len(good)/target.descriptors)
         if (len(good) > 20) and (score > current_score):
-                bestMatch = Match(target, good, score)
+            bestMatch = Match(target, good, score)
         
     return bestMatch
            
@@ -98,9 +98,9 @@ def writeTitle(imageWebcam,imgWebcam, bestMatch, matrix):
     webcamHeight,webcamWidth,_ = imgWebcam.shape
     blank = np.zeros((webcamHeight,webcamWidth,3), np.uint8)
 
-    (_, textHeight), _ = cv2.getTextSize(bestMatch.poster.movieName, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 1)
+    (_, textHeight), _ = cv2.getTextSize(bestMatch.poster.movieName, cv2.FONT_HERSHEY_SIMPLEX, 2, 2)
     org = (0, 0 + textHeight)
-    cv2.putText(blank, bestMatch.poster.movieName, (org), cv2.FONT_HERSHEY_SIMPLEX , 0.8, (0,255,0), 1, cv2.LINE_AA)
+    cv2.putText(blank, bestMatch.poster.movieName, (org), cv2.FONT_HERSHEY_SIMPLEX , 2, (0,255,0), 2, cv2.LINE_AA)
     blank = cv2.warpPerspective(blank, matrix, (webcamWidth, webcamHeight))
 
     roi = imgWebcam[0:webcamHeight, 0:webcamWidth]
