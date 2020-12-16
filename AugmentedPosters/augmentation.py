@@ -16,25 +16,17 @@ TUTORIAL_MODE = False
 
 class Poster:
     def __init__(self, imagePath, movieName, score, kp, descriptors):
-        self.imagePath = imagePath
         self.movieName = movieName
         self.score = score
         self.kp = kp
         self.descriptors = descriptors
         self.image = cv2.imread(imagePath)
-    def __repr__(self):
-        return('Path: ' + self.imagePath + 
-               '   Score: ' + self.score)
-
-
 
 class Match:
     def __init__(self, poster, matches, score):
         self.poster = poster
         self.matches = matches
         self.score = score
-    def __repr__(self):
-        return('Poster: ' + self.poster.imagePath)
     def empty(self):
         return len(self.matches) == 0
 
