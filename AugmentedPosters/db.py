@@ -5,6 +5,7 @@ import os
 
 DATABASE_DIR = "images_db"
 
+#Information retrieved from database
 class Poster:
     def __init__(self, imagePath, movieName, score, kp, descriptors):
         self.movieName = movieName
@@ -12,10 +13,12 @@ class Poster:
         self.kp = kp
         self.descriptors = descriptors
         self.image = cv2.imread(imagePath)
-        
+
+#Return movie's data path
 def getDataPath(movieName):
     return DATABASE_DIR + "/" + movieName + '/' + 'data.json'
 
+#Save data to JSON file
 def save2json(score, kps, des, path):
     data = {}  
     cnt = 0
@@ -30,7 +33,7 @@ def save2json(score, kps, des, path):
     with open(path, 'w') as outfile:  
         json.dump(data, outfile)
 
-
+#Read data file from database
 def readjson(path):
     des = []
     kps = []   

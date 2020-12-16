@@ -10,6 +10,7 @@ import argparse
 
 TUTORIAL_MODE = False
 
+#Information about a successful match
 class Match:
     def __init__(self, poster, matches):
         self.poster = poster
@@ -17,6 +18,7 @@ class Match:
     def empty(self):
         return len(self.matches) == 0
 
+#Compare webcam image to posters and return good matches
 def getBestMatch(desWebcam, targets):
 
     bf = cv2.BFMatcher(crossCheck= False)
@@ -40,7 +42,7 @@ def getBestMatch(desWebcam, targets):
         
     return goodMatches      
 
-
+#Show image with poster bounds
 def drawImageBounds(imgWebcam, targetImage, matrix):
     targetHeigth, targetWidth, _ = targetImage.shape
     pts = np.float32([[0,0], [0,targetHeigth - 1], [targetWidth - 1, targetHeigth - 1], [targetWidth - 1, 0]]).reshape(-1,1,2)
@@ -49,7 +51,7 @@ def drawImageBounds(imgWebcam, targetImage, matrix):
     cv2.imshow('ImageBounds',imageBounds)
 
 
-
+#Create image with movie title and add it to webcam
 def writeTitle(imageWebcam,imgWebcam, bestMatch, matrix):
 
     if(TUTORIAL_MODE):
@@ -75,6 +77,7 @@ def writeTitle(imageWebcam,imgWebcam, bestMatch, matrix):
     return cv2.add(img1_bg,img2_fg)
 
 
+#Draw cube according to already exint ones
 def drawCube(imgWebcam, targetImage, matrix, camera, h):
 
     targetHeigth, targetWidth, _ = targetImage.shape
@@ -138,7 +141,7 @@ def main():
 
             # If images have more than 50 matching points
             if len(goodMatches) > 0:
-                
+
                 for bestMatch in goodMatches:
                     if(TUTORIAL_MODE):
                         print("Match found with " + bestMatch.poster.movieName)

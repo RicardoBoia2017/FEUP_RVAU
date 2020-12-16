@@ -7,6 +7,7 @@ import util
 import db
 import argparse
 
+#Store poster and its information
 def createPoster(movieName, score, imagePath):
     dir = db.DATABASE_DIR + "/" + movieName
 
@@ -35,10 +36,9 @@ def createPoster(movieName, score, imagePath):
     #Save descriptors keypoints and score in file
     db.save2json(score, kp, des, db.getDataPath(movieName))
 
-
-
 def main():
 
+    #Validate arguments
     parser = argparse.ArgumentParser(description='Prepare setup')
     group = parser.add_mutually_exclusive_group(required = True)
     group.add_argument('--add', '-a', nargs="*", metavar=('path', 'score', 'name'), action='store')
