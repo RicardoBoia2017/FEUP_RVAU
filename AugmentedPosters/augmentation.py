@@ -12,8 +12,6 @@ rootdir = "images_db"
 targets = []
 TUTORIAL_MODE = False
 
-
-
 class Poster:
     def __init__(self, imagePath, movieName, score, kp, descriptors):
         self.movieName = movieName
@@ -29,8 +27,6 @@ class Match:
         self.score = score
     def empty(self):
         return len(self.matches) == 0
-
-
 
 #Get posters from database
 def retrieveImages():
@@ -53,6 +49,9 @@ def getBestMatch(desWebcam):
 
     bf = cv2.BFMatcher(crossCheck= False)
     bestMatch = Match(None, [], 0)
+
+    if(TUTORIAL_MODE):
+        print("Matching webcam with posters")
 
     #Compare webcam image with posters
     for target in targets:
@@ -87,6 +86,9 @@ def drawImageBounds(imgWebcam, targetImage, matrix):
 
 def writeTitle(imageWebcam,imgWebcam, bestMatch, matrix):
 
+    if(TUTORIAL_MODE):
+        print("Writing title")
+
     webcamHeight,webcamWidth,_ = imgWebcam.shape
     blank = np.zeros((webcamHeight,webcamWidth,3), np.uint8)
 
@@ -108,6 +110,7 @@ def writeTitle(imageWebcam,imgWebcam, bestMatch, matrix):
 
 
 def drawCube(imgWebcam, targetImage, matrix, camera, h):
+
     targetHeigth, targetWidth, _ = targetImage.shape
     objp = np.zeros((2*2,3), np.float32)
     objp[:,:2] = np.mgrid[0:2,0:2].T.reshape(-1,2)
@@ -146,6 +149,10 @@ def drawCube(imgWebcam, targetImage, matrix, camera, h):
 def main():
     camera = cam.Camera() #Load camera calibration file
     retrieveImages() #Load database
+
+    if(TUTORIAL_MODE):
+        print("Retrieving images from database")
+
     capture = cv2.VideoCapture(0) # Start webcam
     sift = util.sift_create()
 
@@ -166,14 +173,19 @@ def main():
             # If images have more than 20 matching points
             if not bestMatch.empty():
 
+                if(TUTORIAL_MODE):
+                    print("Match found with " + bestMatch.poster.movieName)
+
                 targetImage = bestMatch.poster.image
                 kpTarget = bestMatch.poster.kp
                 
                 if(TUTORIAL_MODE):
                     # Draws lines between image target and captured image
                     imageFeatures = cv2.drawMatches(targetImage, kpTarget, imgWebcam, kpWebcam, bestMatch.matches, None, flags=2)
-                    cv2.imshow('Images', imageFeatures) 
+                    cv2.imshow('Matches', imageFeatures) 
 
+                if(TUTORIAL_MODE):
+                    print("Calculating homography")
 
                 # Calculate homography
                 targetSrcPoints = np.float32([kpTarget[m.queryIdx].pt for m in bestMatch.matches]).reshape(-1,1,2)
@@ -186,10 +198,13 @@ def main():
                     if(TUTORIAL_MODE):
                         drawImageBounds(imgWebcam, targetImage, matrix)
 
-                    for i in range(bestMatch.poster.score):
-                        drawCube(imgWebcam, targetImage, matrix, camera, 1.5*i)
-
                     imgWebcam = writeTitle(imgWebcam, imgWebcam,bestMatch, matrix)
+
+                    if(TUTORIAL_MODE):
+                            print("Drawing cubes")
+
+                    for i in range(bestMatch.poster.score):
+                        drawCube(imgWebcam, targetImage, matrix, camera, 1.5*i)                
 
 
         cv2.imshow('Webcam', imgWebcam)
