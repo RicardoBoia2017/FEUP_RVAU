@@ -20,7 +20,7 @@ class Match:
 def getBestMatch(desWebcam, targets):
 
     bf = cv2.BFMatcher(crossCheck= False)
-    bestMatch = Match(None, [])
+    goodMatches = []
 
     if(TUTORIAL_MODE):
         print("Matching webcam with posters")
@@ -35,11 +35,10 @@ def getBestMatch(desWebcam, targets):
             if m.distance < 0.75 * n.distance:
                 good.append(m)
 
-        if (len(good) > 50) and (len(good) > len(bestMatch.matches)):
-            bestMatch = Match(target, good)
+        if (len(good) > 50) :
+            goodMatches.append(Match(target, good))
         
-    return bestMatch
-           
+    return goodMatches      
 
 
 def drawImageBounds(imgWebcam, targetImage, matrix):
@@ -135,43 +134,44 @@ def main():
         if desWebcam is not None:
 
             #Detect image from webcam
-            bestMatch = getBestMatch(desWebcam, targets)
+            goodMatches = getBestMatch(desWebcam, targets)
 
-            # If images have more than 20 matching points
-            if not bestMatch.empty():
-
-                if(TUTORIAL_MODE):
-                    print("Match found with " + bestMatch.poster.movieName)
-
-                targetImage = bestMatch.poster.image
-                kpTarget = bestMatch.poster.kp
+            # If images have more than 50 matching points
+            if len(goodMatches) > 0:
                 
-                if(TUTORIAL_MODE):
-                    # Draws lines between image target and captured image
-                    imageFeatures = cv2.drawMatches(targetImage, kpTarget, imgWebcam, kpWebcam, bestMatch.matches, None, flags=2)
-                    cv2.imshow('Matches', imageFeatures) 
+                for bestMatch in goodMatches:
+                    if(TUTORIAL_MODE):
+                        print("Match found with " + bestMatch.poster.movieName)
 
-                if(TUTORIAL_MODE):
-                    print("Calculating homography")
-
-                # Calculate homography
-                targetSrcPoints = np.float32([kpTarget[m.queryIdx].pt for m in bestMatch.matches]).reshape(-1,1,2)
-                webcamSrcPoints = np.float32([kpWebcam[m.trainIdx].pt for m in bestMatch.matches]).reshape(-1,1,2)
-                matrix, _ = cv2.findHomography(targetSrcPoints, webcamSrcPoints, cv2.RANSAC, 5)
-
-                
-                if matrix is not None:
+                    targetImage = bestMatch.poster.image
+                    kpTarget = bestMatch.poster.kp
                     
                     if(TUTORIAL_MODE):
-                        drawImageBounds(imgWebcam, targetImage, matrix)
-
-                    imgWebcam = writeTitle(imgWebcam, imgWebcam,bestMatch, matrix)
+                        # Draws lines between image target and captured image
+                        imageFeatures = cv2.drawMatches(targetImage, kpTarget, imgWebcam, kpWebcam, bestMatch.matches, None, flags=2)
+                        cv2.imshow('Matches', imageFeatures) 
 
                     if(TUTORIAL_MODE):
-                            print("Drawing cubes")
+                        print("Calculating homography")
 
-                    for i in range(bestMatch.poster.score):
-                        drawCube(imgWebcam, targetImage, matrix, camera, 1.5*i)                
+                    # Calculate homography
+                    targetSrcPoints = np.float32([kpTarget[m.queryIdx].pt for m in bestMatch.matches]).reshape(-1,1,2)
+                    webcamSrcPoints = np.float32([kpWebcam[m.trainIdx].pt for m in bestMatch.matches]).reshape(-1,1,2)
+                    matrix, _ = cv2.findHomography(targetSrcPoints, webcamSrcPoints, cv2.RANSAC, 5)
+
+                    
+                    if matrix is not None:
+                        
+                        if(TUTORIAL_MODE):
+                            drawImageBounds(imgWebcam, targetImage, matrix)
+
+                        imgWebcam = writeTitle(imgWebcam, imgWebcam,bestMatch, matrix)
+
+                        if(TUTORIAL_MODE):
+                                print("Drawing cubes")
+
+                        for i in range(bestMatch.poster.score):
+                            drawCube(imgWebcam, targetImage, matrix, camera, 1.5*i)                
 
 
         cv2.imshow('Webcam', imgWebcam)
