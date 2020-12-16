@@ -63,13 +63,8 @@ def getBestMatch(desWebcam):
             if m.distance < 0.75 * n.distance:
                 good.append(m)
 
-
-        score = 1.0 * len(good)/len(target.descriptors)
-        current_score = bestMatch.score
-
-        # print(len(good)/target.descriptors)
-        if (len(good) > 20) and (score > current_score):
-            bestMatch = Match(target, good, score)
+        if (len(good) > 70) and (len(good) > len(bestMatch.matches)):
+            bestMatch = Match(target, good, 0)
         
     return bestMatch
            
@@ -150,6 +145,10 @@ def main():
     camera = cam.Camera() #Load camera calibration file
     retrieveImages() #Load database
 
+    for t in targets:
+        print(t.movieName)
+        print(len(t.descriptors))
+
     if(TUTORIAL_MODE):
         print("Retrieving images from database")
 
@@ -172,6 +171,8 @@ def main():
 
             # If images have more than 20 matching points
             if not bestMatch.empty():
+                print("Match found with " + bestMatch.poster.movieName)
+                print(len(bestMatch.matches))
 
                 if(TUTORIAL_MODE):
                     print("Match found with " + bestMatch.poster.movieName)
