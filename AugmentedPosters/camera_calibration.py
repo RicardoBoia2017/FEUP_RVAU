@@ -21,6 +21,7 @@ class Camera:
         return undistort(img, self.mtx, self.dist)
 
 
+# Calibration state handler
 def calibrate():
     if os.path.isfile(CALIBRATION_FILE) is True:
         print("CALIBRATION: Calibration file already exists")
@@ -31,7 +32,7 @@ def calibrate():
         save(mtx, dist)
         print("CALIBRATION: Config file saved")
 
-        
+# Load calibration config 
 def load():
     if os.path.isfile(CALIBRATION_FILE) is False:
         print("CALIBRATION: Calibration file missing")
@@ -43,7 +44,7 @@ def load():
         dist =  np.array(data["dist_coeff"])
         return mtx, dist
 
-
+# Save calibration config
 def save(mtx, dist):
     # transform the matrix and distortion coefficients to writable lists
     data = {"camera_matrix": np.asarray(mtx).tolist(), "dist_coeff": np.asarray(dist).tolist()}
@@ -51,12 +52,12 @@ def save(mtx, dist):
     with open(CALIBRATION_FILE, "w") as f:
         json.dump(data, f)
 
-
+# Delete calibration file
 def delete():
     os.remove(CALIBRATION_FILE)
 
 
-
+# Calibrate camera in real time with the webcam
 def calibrateCameraLive():
     # termination criteria - accuracy(epsilon) or number of iterations 
     criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
@@ -100,7 +101,7 @@ def calibrateCameraLive():
     return ret, mtx, dist
 
 
-
+# Calibrate camera with the images in calibration folder
 def calibrateCamera():
 
     # termination criteria - accuracy(epsilon) or number of iterations 
@@ -139,7 +140,7 @@ def calibrateCamera():
     return ret, mtx, dist
 
 
-
+# Undistort camera image using intrinsic camera parameters
 def undistort(img, mtx, dist):
     h,  w = img.shape[:2]
     newcameramtx, roi=cv.getOptimalNewCameraMatrix(mtx,dist,(w,h),1,(w,h))
