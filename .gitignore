@@ -75,3 +75,5 @@ Game/QCAR/
 
 AugmentedPosters/env_name/*
 
+
+*.pyc
