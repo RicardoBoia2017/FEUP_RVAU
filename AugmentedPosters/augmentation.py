@@ -33,9 +33,12 @@ def getBestMatch(desWebcam, targets):
         good = []
 
         #Gets matching points
-        for m,n in matches:
-            if m.distance < 0.75 * n.distance:
-                good.append(m)
+        try:
+            for m,n in matches:
+                if m.distance < 0.75 * n.distance:
+                    good.append(m)
+        except ValueError:
+            pass
 
         if (len(good) > 50) :
             goodMatches.append(Match(target, good))
@@ -95,7 +98,7 @@ def drawCube(imgWebcam, targetImage, matrix, camera, h):
     pts = np.float32([[x0,y0], [x1, y0], [x0,y1], [x1, y1]]).reshape(-1,1,2)
     dest = cv2.perspectiveTransform(pts, matrix)
     ret,rvecs, tvecs = cv2.solvePnP(objp, dest, camera.mtx, camera.dist)
-
+    
     if ret == True:
         # project 3D points to image plane
         imgpts, _ = cv2.projectPoints(axis, rvecs, tvecs, camera.mtx, camera.dist)
@@ -171,7 +174,7 @@ def main():
                         imgWebcam = writeTitle(imgWebcam, imgWebcam,bestMatch, matrix)
 
                         if(TUTORIAL_MODE):
-                                print("Drawing cubes")
+                            print("Drawing cubes")
 
                         for i in range(bestMatch.poster.score):
                             drawCube(imgWebcam, targetImage, matrix, camera, 1.5*i)                
