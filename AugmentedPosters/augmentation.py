@@ -1,54 +1,26 @@
 import cv2
-import os
 import numpy as np
 import time
 import sys
 import camera_calibration as cam
 import preparation as prep
 import util
+import db
 import argparse
 
-rootdir = "images_db"
-targets = []
 TUTORIAL_MODE = False
 
-class Poster:
-    def __init__(self, imagePath, movieName, score, kp, descriptors):
-        self.movieName = movieName
-        self.score = score
-        self.kp = kp
-        self.descriptors = descriptors
-        self.image = cv2.imread(imagePath)
-
 class Match:
-    def __init__(self, poster, matches, score):
+    def __init__(self, poster, matches):
         self.poster = poster
         self.matches = matches
-        self.score = score
     def empty(self):
         return len(self.matches) == 0
 
-#Get posters from database
-def retrieveImages():
-    for _, dirs, _ in os.walk(rootdir):
-        for subdir in dirs:
-            for _, _, files2 in os.walk(rootdir + "/" + subdir):
-                descriptors = []
-                kp = []
-                score = 0
-                for name in files2:
-                    if name == "data.json":
-                        score, kp, descriptors = prep.readjson(prep.getDataPath(subdir))
-                    else:
-                        imagePath = rootdir + '/' + subdir + '/' + name
-                        
-            targets.append(Poster(imagePath, subdir, score, kp, descriptors))
-
-
-def getBestMatch(desWebcam):
+def getBestMatch(desWebcam, targets):
 
     bf = cv2.BFMatcher(crossCheck= False)
-    bestMatch = Match(None, [], 0)
+    bestMatch = Match(None, [])
 
     if(TUTORIAL_MODE):
         print("Matching webcam with posters")
@@ -63,8 +35,8 @@ def getBestMatch(desWebcam):
             if m.distance < 0.75 * n.distance:
                 good.append(m)
 
-        if (len(good) > 70) and (len(good) > len(bestMatch.matches)):
-            bestMatch = Match(target, good, 0)
+        if (len(good) > 50) and (len(good) > len(bestMatch.matches)):
+            bestMatch = Match(target, good)
         
     return bestMatch
            
@@ -143,11 +115,7 @@ def drawCube(imgWebcam, targetImage, matrix, camera, h):
 
 def main():
     camera = cam.Camera() #Load camera calibration file
-    retrieveImages() #Load database
-
-    for t in targets:
-        print(t.movieName)
-        print(len(t.descriptors))
+    targets = db.retrieveImages() #Load database
 
     if(TUTORIAL_MODE):
         print("Retrieving images from database")
@@ -167,12 +135,10 @@ def main():
         if desWebcam is not None:
 
             #Detect image from webcam
-            bestMatch = getBestMatch(desWebcam)
+            bestMatch = getBestMatch(desWebcam, targets)
 
             # If images have more than 20 matching points
             if not bestMatch.empty():
-                print("Match found with " + bestMatch.poster.movieName)
-                print(len(bestMatch.matches))
 
                 if(TUTORIAL_MODE):
                     print("Match found with " + bestMatch.poster.movieName)
